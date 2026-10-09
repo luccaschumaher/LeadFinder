@@ -1,15 +1,26 @@
-/**
- * Rotas da aplicação. As rotas marcadas como "próxima etapa" ainda exibem
- * uma página provisória e serão implementadas nas etapas seguintes.
- */
+/** Rotas da aplicação. */
 export const ROUTES = {
   home: '/',
-  signIn: '/entrar', // próxima etapa: autenticação Supabase
-  signUp: '/criar-conta', // próxima etapa: autenticação Supabase
-  dashboard: '/app', // próxima etapa: área protegida
+  signIn: '/entrar',
+  signUp: '/criar-conta',
+  forgotPassword: '/recuperar-senha',
+  resetPassword: '/redefinir-senha',
+  onboarding: '/boas-vindas',
   contact: '/contato',
   privacy: '/privacidade',
   terms: '/termos',
-} as const
+  unauthorized: '/acesso-negado',
 
-export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES]
+  dashboard: '/app',
+  search: '/app/buscar',
+  company: (id: string) => `/app/empresas/${encodeURIComponent(id)}`,
+  leads: '/app/leads',
+  favorites: '/app/favoritos',
+  history: '/app/historico',
+  prompts: '/app/prompts',
+  finance: '/app/financeiro',
+  siteGenerator: '/app/gerador',
+  waveIA: '/app/waveia',
+  plans: '/app/planos',
+  settings: '/app/configuracoes',
+} as const

@@ -9,9 +9,11 @@ import { NAV_LINKS } from '@/config/navigation'
 import { ROUTES } from '@/config/routes'
 import { useScrolled } from '@/hooks/useScrolled'
 import { cn } from '@/lib/cn'
+import { useUser } from '@/stores/session'
 
 export function Navbar() {
   const scrolled = useScrolled()
+  const user = useUser()
   const [open, setOpen] = useState(false)
   const toggleRef = useRef<HTMLButtonElement>(null)
 
@@ -71,12 +73,20 @@ export function Navbar() {
           </nav>
 
           <div className="hidden items-center gap-2 md:flex">
-            <ButtonLink to={ROUTES.signIn} variant="ghost" size="sm">
-              Entrar
-            </ButtonLink>
-            <ButtonLink to={ROUTES.signUp} size="sm">
-              Criar conta
-            </ButtonLink>
+            {user ? (
+              <ButtonLink to={ROUTES.dashboard} size="sm">
+                Ir para o painel
+              </ButtonLink>
+            ) : (
+              <>
+                <ButtonLink to={ROUTES.signIn} variant="ghost" size="sm">
+                  Entrar
+                </ButtonLink>
+                <ButtonLink to={ROUTES.signUp} size="sm">
+                  Criar conta
+                </ButtonLink>
+              </>
+            )}
           </div>
 
           <button
@@ -128,12 +138,20 @@ export function Navbar() {
                 </ul>
               </nav>
               <div className="flex flex-col gap-3">
-                <ButtonLink to={ROUTES.signUp} size="lg" onClick={() => setOpen(false)}>
-                  Criar conta
-                </ButtonLink>
-                <ButtonLink to={ROUTES.signIn} variant="secondary" size="lg" onClick={() => setOpen(false)}>
-                  Entrar
-                </ButtonLink>
+                {user ? (
+                  <ButtonLink to={ROUTES.dashboard} size="lg" onClick={() => setOpen(false)}>
+                    Ir para o painel
+                  </ButtonLink>
+                ) : (
+                  <>
+                    <ButtonLink to={ROUTES.signUp} size="lg" onClick={() => setOpen(false)}>
+                      Criar conta
+                    </ButtonLink>
+                    <ButtonLink to={ROUTES.signIn} variant="secondary" size="lg" onClick={() => setOpen(false)}>
+                      Entrar
+                    </ButtonLink>
+                  </>
+                )}
               </div>
             </Container>
           </motion.div>

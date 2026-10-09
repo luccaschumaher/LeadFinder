@@ -1,3 +1,4 @@
+import { Faq } from '@/components/landing/Faq'
 import { Features } from '@/components/landing/Features'
 import { FinalCta } from '@/components/landing/FinalCta'
 import { Footer } from '@/components/landing/Footer'
@@ -21,6 +22,7 @@ export function LandingPage() {
         <Features />
         <HowItWorks />
         <Pricing />
+        <Faq />
         <FinalCta />
       </main>
       <Footer />

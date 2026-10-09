@@ -1,8 +1,9 @@
-import { Check, Gem } from 'lucide-react'
-import { Button, ButtonLink } from '@/components/ui/Button'
+import { Check, Minus } from 'lucide-react'
+import { PlanBadge } from '@/components/brand/PlanBadge'
+import { ButtonLink } from '@/components/ui/Button'
 import { Container, Reveal, SectionHeading } from '@/components/ui/primitives'
 import { SECTION_IDS } from '@/config/navigation'
-import { PLAN_ORDER, PLANS, type Plan } from '@/config/plans'
+import { PLANS, planFeatureList, type Plan } from '@/config/plans'
 import { ROUTES } from '@/config/routes'
 import { cn } from '@/lib/cn'
 
@@ -22,7 +23,7 @@ export function Pricing() {
           id="pricing-title"
           eyebrow="Planos"
           title="Comece grátis. Evolua quando precisar."
-          description="Quatro planos pensados para cada momento da sua prospecção. Os valores serão divulgados em breve."
+          description="Quatro planos para cada momento da sua prospecção. Todos incluem busca de empresas, Meus Leads, Favoritos e Histórico."
         />
 
         <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -35,8 +36,7 @@ export function Pricing() {
 
         <Reveal delay={0.2}>
           <p className="mx-auto mt-10 max-w-2xl text-center text-sm leading-relaxed text-fg-subtle">
-            Preços e benefícios ainda estão em definição e podem mudar antes do lançamento. Os benefícios listados são
-            os previstos para cada plano.
+            Assinatura mensal, cancele quando quiser. Pagamento processado pela Cakto.
           </p>
         </Reveal>
       </Container>
@@ -45,7 +45,6 @@ export function Pricing() {
 }
 
 function PlanCard({ plan }: { plan: Plan }) {
-  const level = PLAN_ORDER.indexOf(plan.id) + 1
   const isDiamond = plan.id === 'diamond'
 
   return (
@@ -65,18 +64,16 @@ function PlanCard({ plan }: { plan: Plan }) {
         )}
       >
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <PlanBadge plan={plan.id} size={44} />
             <h3 id={`plan-${plan.id}`} className="text-lg font-semibold tracking-[-0.02em] text-fg">
               {plan.name}
             </h3>
-            {isDiamond && <Gem className="size-4 text-ice-accent" strokeWidth={1.75} aria-hidden />}
           </div>
-          {plan.recommended ? (
+          {plan.recommended && (
             <span className="rounded-full bg-electric-500/15 px-2.5 py-1 text-[11px] font-medium text-electric-300 ring-1 ring-electric-500/30">
               Recomendado
             </span>
-          ) : (
-            <TierMeter level={level} />
           )}
         </div>
 
@@ -86,53 +83,39 @@ function PlanCard({ plan }: { plan: Plan }) {
           <div className="text-2xl font-semibold tracking-[-0.03em] text-fg">
             {plan.priceLabel ?? 'Preço a definir'}
           </div>
-          <div className="mt-1 text-xs text-fg-subtle">
-            {plan.available ? 'Disponível no lançamento' : 'Assinatura disponível em breve'}
-          </div>
+          <div className="mt-1 font-mono text-xs text-electric-300">{plan.limits.tokens} tokens por dia</div>
         </div>
 
-        <div className="mt-6">
-          {plan.available ? (
-            <ButtonLink to={ROUTES.signUp} className="w-full">
-              Começar gratuitamente
-            </ButtonLink>
-          ) : (
-            <Button variant="secondary" className="w-full" disabled>
-              Em breve
-            </Button>
-          )}
-        </div>
+        <ButtonLink to={ROUTES.signUp} className="mt-6 w-full" variant={plan.id === 'free' ? 'primary' : 'secondary'}>
+          {plan.id === 'free' ? 'Começar gratuitamente' : 'Criar conta'}
+        </ButtonLink>
 
-        <div className="mt-7">
-          <div className="font-mono text-[10px] tracking-[0.16em] text-fg-subtle uppercase">Benefícios previstos</div>
-          <ul className="mt-4 flex flex-col gap-3">
-            {plan.benefits.map((b) => (
-              <li key={b} className="flex gap-2.5 text-sm leading-snug text-fg-muted">
+        <ul className="mt-7 flex flex-col gap-3">
+          {planFeatureList(plan).map((f) => (
+            <li
+              key={f.label}
+              className={cn('flex gap-2.5 text-sm leading-snug', f.included ? 'text-fg-muted' : 'text-fg-subtle')}
+            >
+              {f.included ? (
                 <Check
                   className={cn(
                     'mt-0.5 size-4 shrink-0',
-                    isDiamond && b.startsWith('WaveIA') ? 'text-ice-accent' : 'text-electric-400',
+                    isDiamond && f.label.includes('WaveIA') ? 'text-ice-accent' : 'text-electric-400',
                   )}
                   strokeWidth={2}
                   aria-hidden
                 />
-                <span className={cn(b.startsWith('Tudo do') && 'text-fg')}>{b}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+              ) : (
+                <Minus className="mt-0.5 size-4 shrink-0" aria-hidden />
+              )}
+              <span>
+                <span className="sr-only">{f.included ? 'Incluído: ' : 'Não incluído: '}</span>
+                {f.label}
+              </span>
+            </li>
+          ))}
+        </ul>
       </article>
     </div>
-  )
-}
-
-/** Indicador discreto do nível do plano (1 a 4). */
-function TierMeter({ level }: { level: number }) {
-  return (
-    <span className="flex items-center gap-0.5" aria-label={`Nível ${level} de ${PLAN_ORDER.length}`} role="img">
-      {PLAN_ORDER.map((id, i) => (
-        <span key={id} className={cn('h-3 w-1 rounded-full', i < level ? 'bg-electric-400' : 'bg-white/10')} />
-      ))}
-    </span>
   )
 }

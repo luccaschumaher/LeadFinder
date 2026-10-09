@@ -63,7 +63,7 @@ const MODULES: Module[] = [
     badge: (
       <span className="inline-flex items-center gap-1.5 rounded-full border border-(--accent)/30 bg-(--accent)/10 px-2.5 py-1 text-[11px] font-medium text-(--accent)">
         <Gem className="size-3" />
-        Planejado para o Diamond
+        Plano Diamond
       </span>
     ),
   },
