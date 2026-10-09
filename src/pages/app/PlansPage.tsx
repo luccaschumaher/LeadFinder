@@ -33,7 +33,7 @@ const ROWS: { label: string; value: (p: Plan) => string | boolean }[] = [
     label: 'Gerador de prompts para sites',
     value: (p) => (p.limits.siteGenerationsPerDay ? `${p.limits.siteGenerationsPerDay} por dia` : false),
   },
-  { label: 'WaveIA', value: (p) => p.limits.waveIA },
+  { label: 'WaveIA', value: (p) => (p.limits.waveIA ? `${p.limits.waveMessagesPerDay} mensagens/dia` : false) },
 ]
 
 export function PlansPage() {

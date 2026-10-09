@@ -359,11 +359,14 @@ export function SearchPage() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h2 className="text-[15px] font-semibold tracking-tight text-fg">
-                    {plural(current.total, 'empresa encontrada', 'empresas encontradas')}
+                    {current.approximate && current.hasMore
+                      ? `${current.total}+ empresas encontradas`
+                      : plural(current.total, 'empresa encontrada', 'empresas encontradas')}
                   </h2>
                   <p className="mt-0.5 text-[13px] text-fg-subtle">
                     "{current.query.segment}" em {current.query.region} · exibindo {results.length} de{' '}
                     {current.companyIds.length} carregadas
+                    {current.approximate && <span> · Dados do Google</span>}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">

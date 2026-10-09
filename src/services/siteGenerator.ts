@@ -1,5 +1,7 @@
 import { FEATURE_PLAN, getPlan } from '@/config/plans'
+import { DEMO_AI } from '@/config/app'
 import { dbError, must, toGeneration } from '@/lib/db'
+import { invokeFunction } from '@/lib/functions'
 import { AppError } from '@/lib/errors'
 import { supabase } from '@/lib/supabase'
 import { delay, todayKey } from '@/lib/utils'
@@ -67,6 +69,22 @@ function buildTemplatePrompt(b: SiteBrief) {
   return lines.join('\n')
 }
 
+/** Geração com IA na edge function lf-ai (o servidor valida plano e limite e salva a geração). */
+async function generateWithAI(brief: SiteBrief): Promise<SiteGeneration> {
+  const result = await invokeFunction<{ generation: Record<string, unknown>; siteGenerationsToday: number }>('lf-ai', {
+    action: 'site_prompt',
+    brief,
+  })
+  const generation = toGeneration(result.generation)
+  dataStore.set((s) => ({
+    ...s,
+    generations: [generation, ...s.generations].slice(0, 30),
+    usage: { ...s.usage, siteGenerations: { day: todayKey(), count: result.siteGenerationsToday } },
+  }))
+  logActivity('site_prompt', `Gerou com IA um prompt de site para ${brief.companyName}`, '/app/gerador')
+  return generation
+}
+
 export const siteGeneratorService = {
   async generate(brief: SiteBrief): Promise<SiteGeneration> {
     const limit = dailyLimit()
@@ -79,6 +97,7 @@ export const siteGeneratorService = {
     if (dailyUsage() >= limit) {
       throw new AppError('limit_reached', `Você usou as ${limit} gerações de hoje. O limite renova amanhã.`)
     }
+    if (!DEMO_AI) return generateWithAI(brief)
     // O servidor valida o plano e o limite diário e registra o uso.
     const { data: count, error } = await supabase.rpc('lf_register_site_generation')
     if (error) {

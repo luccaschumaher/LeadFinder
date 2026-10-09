@@ -112,6 +112,8 @@ export interface SearchSession {
   total: number
   page: number
   hasMore: boolean
+  /** Busca real: o total é "até agora" (o Google não informa o total). */
+  approximate?: boolean
 }
 
 export type PromptCategory = 'first-contact' | 'follow-up' | 'proposal' | 'objections' | 'sites' | 'other'

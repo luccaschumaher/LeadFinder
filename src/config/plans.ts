@@ -16,6 +16,8 @@ export interface PlanLimits {
   /** Gerações diárias no Gerador de Prompts para Sites. 0 = sem acesso. */
   siteGenerationsPerDay: number
   waveIA: boolean
+  /** Mensagens por dia para a WaveIA (validado no banco por lf_register_wave_message). */
+  waveMessagesPerDay: number
 }
 
 export interface Plan {
@@ -40,7 +42,7 @@ export const PLANS: Plan[] = [
     id: 'free',
     name: 'Free',
     description: 'Para conhecer o LeadFinder e fazer as primeiras buscas.',
-    limits: { tokens: 3, savedPrompts: 0, siteGenerationsPerDay: 0, waveIA: false },
+    limits: { tokens: 3, savedPrompts: 0, siteGenerationsPerDay: 0, waveIA: false, waveMessagesPerDay: 0 },
     priceLabel: 'Grátis',
     checkoutUrl: null,
   },
@@ -48,7 +50,7 @@ export const PLANS: Plan[] = [
     id: 'silver',
     name: 'Silver',
     description: 'Para prospectar com constância e montar sua biblioteca.',
-    limits: { tokens: 40, savedPrompts: 5, siteGenerationsPerDay: 0, waveIA: false },
+    limits: { tokens: 40, savedPrompts: 5, siteGenerationsPerDay: 0, waveIA: false, waveMessagesPerDay: 0 },
     priceLabel: 'R$ 29,90/mês',
     checkoutUrl: 'https://pay.cakto.com.br/buiqzt9_1167071',
   },
@@ -56,7 +58,7 @@ export const PLANS: Plan[] = [
     id: 'gold',
     name: 'Gold',
     description: 'Para quem prospecta todos os dias e entrega sites com IA.',
-    limits: { tokens: 70, savedPrompts: 10, siteGenerationsPerDay: 10, waveIA: false },
+    limits: { tokens: 70, savedPrompts: 10, siteGenerationsPerDay: 10, waveIA: false, waveMessagesPerDay: 0 },
     priceLabel: 'R$ 49,90/mês',
     checkoutUrl: 'https://pay.cakto.com.br/db4r8g9_1167090',
     recommended: true,
@@ -65,7 +67,7 @@ export const PLANS: Plan[] = [
     id: 'diamond',
     name: 'Diamond',
     description: 'Para uma operação completa, com a assistente WaveIA.',
-    limits: { tokens: 120, savedPrompts: UNLIMITED, siteGenerationsPerDay: 20, waveIA: true },
+    limits: { tokens: 120, savedPrompts: UNLIMITED, siteGenerationsPerDay: 20, waveIA: true, waveMessagesPerDay: 30 },
     priceLabel: 'R$ 99,90/mês',
     checkoutUrl: 'https://pay.cakto.com.br/asgfhan_1167097',
   },
@@ -123,6 +125,9 @@ export function planFeatureList(plan: Plan): { label: string; included: boolean 
           : 'Sem Gerador de Prompts para Sites',
       included: limits.siteGenerationsPerDay > 0,
     },
-    { label: limits.waveIA ? 'Acesso à WaveIA' : 'Sem acesso à WaveIA', included: limits.waveIA },
+    {
+      label: limits.waveIA ? `WaveIA: até ${limits.waveMessagesPerDay} mensagens por dia` : 'Sem acesso à WaveIA',
+      included: limits.waveIA,
+    },
   ]
 }

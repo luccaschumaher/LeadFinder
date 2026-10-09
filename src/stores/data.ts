@@ -51,6 +51,7 @@ export interface DataState {
     /** Tokens gastos no dia `day` (AAAA-MM-DD, fuso de Brasília). Zera ao virar o dia. */
     tokens: { day: string; used: number }
     siteGenerations: { day: string; count: number }
+    waveMessages: { day: string; count: number }
   }
 }
 
@@ -66,7 +67,7 @@ export const emptyData = (): DataState => ({
   conversations: [],
   activity: [],
   sales: [],
-  usage: { tokens: { day: '', used: 0 }, siteGenerations: { day: '', count: 0 } },
+  usage: { tokens: { day: '', used: 0 }, siteGenerations: { day: '', count: 0 }, waveMessages: { day: '', count: 0 } },
 })
 
 export const dataStore = createStore<DataState>(emptyData())
@@ -136,7 +137,12 @@ export async function loadUserData(userId: string) {
   const messagesByConversation: Record<string, ChatMessage[]> = {}
   rows(messages).forEach((r) => (messagesByConversation[r.conversation_id] ??= []).push(toMessage(r)))
 
-  const today = must(usage) as unknown as { day: string; tokens_used: number; site_generations: number }
+  const today = must(usage) as unknown as {
+    day: string
+    tokens_used: number
+    site_generations: number
+    wave_messages?: number
+  }
 
   dataStore.replace({
     companies: companyMap,
@@ -153,6 +159,7 @@ export async function loadUserData(userId: string) {
     usage: {
       tokens: { day: today.day, used: today.tokens_used },
       siteGenerations: { day: today.day, count: today.site_generations },
+      waveMessages: { day: today.day, count: today.wave_messages ?? 0 },
     },
   })
 

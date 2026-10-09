@@ -193,7 +193,15 @@ function Generator() {
                 ? `${result.brief.companyName} · ${formatRelative(result.createdAt)}`
                 : 'O prompt gerado aparecerá aqui.'
             }
-            action={result && !busy && <Badge tone="amber">Modelo local · sem IA</Badge>}
+            action={
+              result &&
+              !busy &&
+              (result.engine === 'ai' ? (
+                <Badge tone="ice">Gerado com IA</Badge>
+              ) : (
+                <Badge tone="amber">Modelo local · sem IA</Badge>
+              ))
+            }
           />
           <div className="flex min-h-0 flex-1 flex-col p-5">
             <AnimatePresence mode="wait">
@@ -248,8 +256,9 @@ function Generator() {
                     </Button>
                   </div>
                   <p className="mt-3 text-[12px] leading-relaxed text-fg-subtle">
-                    Este prompt foi montado por um modelo estruturado local. A geração com inteligência artificial será
-                    conectada em breve.
+                    {result.engine === 'ai'
+                      ? 'Gerado com inteligência artificial. Revise os detalhes antes de usar com o cliente.'
+                      : 'Este prompt foi montado por um modelo estruturado local, sem inteligência artificial.'}
                   </p>
                 </motion.div>
               ) : (

@@ -3,6 +3,7 @@ import { getPlan, TOKENS_PER_COMPANY } from '@/config/plans'
 import { generateDemoCompanies } from '@/data/demo/companies'
 import { dbError, must, toSearch } from '@/lib/db'
 import { AppError } from '@/lib/errors'
+import { invokeFunction } from '@/lib/functions'
 import { supabase } from '@/lib/supabase'
 import { delay, todayKey } from '@/lib/utils'
 import { currentUserId, dataStore, type DataState } from '@/stores/data'
@@ -97,6 +98,80 @@ async function gather(
 
 const cache = (list: Company[]) => Object.fromEntries(list.map((c) => [c.id, c]))
 
+/* ---------------- Busca real (edge function lf-places-search) ---------------- */
+
+interface FunctionResult {
+  record?: Record<string, unknown>
+  companies: Company[]
+  hasMore: boolean
+  totalFound: number
+  tokensUsedToday: number
+  recordTokens?: number
+}
+
+/** Chama a edge function de busca (erros já traduzidos). */
+async function invokeSearch(body: Record<string, unknown>): Promise<FunctionResult> {
+  try {
+    return await invokeFunction<FunctionResult>('lf-places-search', body)
+  } catch (error) {
+    if (error instanceof AppError && error.code === 'insufficient_tokens') throw noTokensError()
+    throw error
+  }
+}
+
+const setTokens = (used: number) =>
+  dataStore.set((s) => ({ ...s, usage: { ...s.usage, tokens: { day: todayKey(), used } } }))
+
+async function realSearch(query: SearchQuery, quantity: number) {
+  const want = Math.min(quantity, Math.floor(tokenBalance() / TOKENS_PER_COMPANY))
+  if (want < 1) throw noTokensError()
+  const result = await invokeSearch({ action: 'search', query, quantity: want })
+  setTokens(result.tokensUsedToday)
+  const record = toSearch(result.record!)
+  dataStore.set((s) => ({
+    ...s,
+    companies: { ...s.companies, ...cache(result.companies) },
+    history: [record, ...s.history],
+    currentSearch: {
+      recordId: record.id,
+      query,
+      companyIds: result.companies.map((c) => c.id),
+      pendingIds: [],
+      total: result.totalFound,
+      page: 1,
+      hasMore: result.hasMore,
+      approximate: true,
+    },
+  }))
+  logActivity('search', `Buscou "${query.segment.trim()}" em ${query.region.trim()}`, '/app/buscar')
+  return { shown: result.companies.length, total: result.totalFound }
+}
+
+async function realLoadMore(quantity: number) {
+  const current = dataStore.get().currentSearch
+  if (!current) return 0
+  const want = Math.min(quantity, Math.floor(tokenBalance() / TOKENS_PER_COMPANY))
+  if (want < 1) throw noTokensError()
+  const result = await invokeSearch({ action: 'more', searchId: current.recordId, quantity: want })
+  setTokens(result.tokensUsedToday)
+  dataStore.set((s) => ({
+    ...s,
+    companies: { ...s.companies, ...cache(result.companies) },
+    history: s.history.map((h) =>
+      h.id === current.recordId
+        ? { ...h, tokensUsed: result.recordTokens ?? h.tokensUsed, resultCount: result.totalFound }
+        : h,
+    ),
+    currentSearch: s.currentSearch && {
+      ...s.currentSearch,
+      companyIds: [...s.currentSearch.companyIds, ...result.companies.map((c) => c.id)],
+      total: result.totalFound,
+      hasMore: result.hasMore,
+    },
+  }))
+  return result.companies.length
+}
+
 export const companyService = {
   tokensPerCompany: TOKENS_PER_COMPANY,
 
@@ -105,6 +180,7 @@ export const companyService = {
    * Busca quantas páginas forem necessárias (20 empresas por chamada à fonte).
    */
   async search(query: SearchQuery, quantity: number) {
+    if (!DEMO_SEARCH) return realSearch(query, quantity)
     const want = Math.min(quantity, Math.floor(tokenBalance() / TOKENS_PER_COMPANY))
     if (want < 1) throw noTokensError()
 
@@ -148,6 +224,7 @@ export const companyService = {
 
   /** Exibe mais `quantity` empresas: primeiro as pendentes (já pagas na fonte), depois novas páginas. */
   async loadMore(quantity: number) {
+    if (!DEMO_SEARCH) return realLoadMore(quantity)
     const current = dataStore.get().currentSearch
     if (!current) return 0
     const want = Math.min(quantity, Math.floor(tokenBalance() / TOKENS_PER_COMPANY))

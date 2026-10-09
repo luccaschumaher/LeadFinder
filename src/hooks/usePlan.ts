@@ -21,6 +21,10 @@ export function usePlan() {
     tokens: { used: tokensUsed, total: limits.tokens, balance: limits.tokens - tokensUsed },
     prompts: { used: promptCount, total: limits.savedPrompts },
     siteGenerations: { used: siteGenerationsToday, total: limits.siteGenerationsPerDay },
+    waveMessages: {
+      used: usage.waveMessages.day === todayKey() ? usage.waveMessages.count : 0,
+      total: limits.waveMessagesPerDay,
+    },
     can: (feature: keyof typeof FEATURE_PLAN) => hasPlanAccess(user.plan, FEATURE_PLAN[feature]),
   }
 }

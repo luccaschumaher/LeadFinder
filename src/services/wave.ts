@@ -1,26 +1,42 @@
 import { must, toConversation, toMessage } from '@/lib/db'
+import { DEMO_AI } from '@/config/app'
 import { AppError } from '@/lib/errors'
+import { invokeFunction } from '@/lib/functions'
 import { supabase } from '@/lib/supabase'
-import { delay, now, uid } from '@/lib/utils'
+import { delay, now, todayKey, uid } from '@/lib/utils'
 import { currentUserId, dataStore } from '@/stores/data'
+import { sessionStore } from '@/stores/session'
 import type { ChatMessage, Conversation } from '@/types'
 
 /**
  * WaveIA — assistente de prospecção e vendas.
  *
- * Conversas e mensagens do usuário ficam salvas no Supabase. NENHUM serviço de IA está
- * conectado ainda: cada envio recebe um aviso explícito ("serviço não conectado"), nunca
- * uma resposta inventada. Os avisos não são salvos. Para integrar, implemente
- * `requestCompletion` chamando uma edge function (a chave da Anthropic fica no servidor).
+ * Conversas e mensagens ficam salvas no Supabase. As respostas vêm da edge function
+ * lf-ai (Claude Haiku 4.5), que valida o plano Diamond e o limite diário. Enquanto
+ * DEMO_AI estiver ligado, cada envio recebe um aviso explícito ("serviço não conectado"),
+ * nunca uma resposta inventada. Avisos não são salvos.
  */
 
 export const WAVE_NOT_CONNECTED =
   'A WaveIA ainda não está conectada a um serviço de inteligência artificial. Sua mensagem foi salva nesta conversa e poderá ser respondida quando a integração for ativada.'
 
-async function requestCompletion(messages: ChatMessage[]): Promise<string> {
-  void messages
-  await delay(1100)
-  throw new AppError('service_unavailable', WAVE_NOT_CONNECTED)
+/** Pede a resposta à IA (edge function lf-ai), que lê a conversa do banco e salva a resposta. */
+async function requestCompletion(conversationId: string): Promise<ChatMessage> {
+  if (DEMO_AI) {
+    await delay(1100)
+    throw new AppError('service_unavailable', WAVE_NOT_CONNECTED)
+  }
+  const mascot = sessionStore.get().user?.preferences.mascot
+  const result = await invokeFunction<{ message: Record<string, unknown>; waveMessagesToday: number }>('lf-ai', {
+    action: 'wave_chat',
+    conversationId,
+    mascot,
+  })
+  dataStore.set((s) => ({
+    ...s,
+    usage: { ...s.usage, waveMessages: { day: todayKey(), count: result.waveMessagesToday } },
+  }))
+  return toMessage(result.message)
 }
 
 function updateConversation(id: string, patch: (c: Conversation) => Conversation) {
@@ -47,8 +63,7 @@ async function complete(conversationId: string) {
   const conversation = dataStore.get().conversations.find((c) => c.id === conversationId)
   if (!conversation) return
   try {
-    const text = await requestCompletion(conversation.messages.filter((m) => m.kind !== 'notice'))
-    const reply = await saveMessage(conversationId, 'assistant', text)
+    const reply = await requestCompletion(conversationId)
     updateConversation(conversationId, (c) => ({ ...c, messages: [...c.messages, reply], updatedAt: reply.createdAt }))
   } catch (error) {
     const text = error instanceof AppError ? error.message : 'Não foi possível obter uma resposta. Tente novamente.'
@@ -64,7 +79,7 @@ async function complete(conversationId: string) {
 }
 
 export const waveService = {
-  isConnected: false,
+  isConnected: !DEMO_AI,
 
   /** Envia uma mensagem. Cria a conversa se necessário e retorna o id dela. */
   async send(conversationId: string | null, text: string) {

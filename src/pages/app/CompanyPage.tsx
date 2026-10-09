@@ -187,7 +187,7 @@ export function CompanyPage() {
                 {company.category}
               </InfoRow>
               <InfoRow icon={<Database />} label="Fonte dos dados">
-                {company.source === 'demo' ? 'Demonstração (dados fictícios)' : 'Google Places'}
+                {company.source === 'demo' ? 'Demonstração (dados fictícios)' : 'Dados do Google Maps'}
               </InfoRow>
             </dl>
           </Card>

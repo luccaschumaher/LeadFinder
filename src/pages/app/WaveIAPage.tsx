@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/Dialog'
 import { Badge, Card } from '@/components/ui/display'
 import { Menu } from '@/components/ui/Menu'
+import { DEMO_AI } from '@/config/app'
 import { usePlan } from '@/hooks/usePlan'
 import { cn } from '@/lib/cn'
 import { toast } from '@/lib/toast'
@@ -79,6 +80,8 @@ export function WaveIAPage() {
 
 function WaveChat() {
   const user = useCurrentUser()
+  const { waveMessages } = usePlan()
+  const limitReached = !DEMO_AI && waveMessages.used >= waveMessages.total
   const mascot = user.preferences.mascot ?? DEFAULT_MASCOT
   const chooseMascot = (id: typeof mascot) => {
     authService.updatePreferences({ mascot: id })
@@ -151,10 +154,16 @@ function WaveChat() {
         title="WaveIA"
         description="Converse sobre prospecção, análise de empresas, abordagens e propostas."
         actions={
-          <Badge tone="amber">
-            <PlugZap />
-            IA não conectada
-          </Badge>
+          DEMO_AI ? (
+            <Badge tone="amber">
+              <PlugZap />
+              IA não conectada
+            </Badge>
+          ) : (
+            <Badge tone={limitReached ? 'amber' : 'ice'}>
+              {waveMessages.used}/{waveMessages.total} mensagens hoje
+            </Badge>
+          )
         }
       />
 
@@ -340,13 +349,24 @@ function WaveChat() {
                 placeholder="Escreva sua mensagem…"
                 className="max-h-40 min-h-9 flex-1 resize-none bg-transparent py-2 text-sm text-fg outline-none placeholder:text-fg-subtle [field-sizing:content]"
               />
-              <Button type="submit" size="icon" disabled={!input.trim() || thinking} aria-label="Enviar mensagem">
+              <Button
+                type="submit"
+                size="icon"
+                disabled={!input.trim() || thinking || limitReached}
+                aria-label="Enviar mensagem"
+              >
                 <SendHorizontal />
               </Button>
             </div>
-            <p className="mt-2 hidden text-center text-[11px] text-fg-subtle sm:block">
-              Enter para enviar · Shift + Enter para nova linha
-            </p>
+            {limitReached ? (
+              <p className="mt-2 text-center text-[12px] text-amber-200/90">
+                Você usou as {waveMessages.total} mensagens de hoje. A WaveIA volta à meia-noite.
+              </p>
+            ) : (
+              <p className="mt-2 hidden text-center text-[11px] text-fg-subtle sm:block">
+                Enter para enviar · Shift + Enter para nova linha
+              </p>
+            )}
           </form>
         </Card>
 
@@ -422,7 +442,7 @@ function MessageBubble({ message, onRetry }: { message: ChatMessage; onRetry?: (
           {notice && (
             <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-amber-300 uppercase">
               <PlugZap className="size-3.5" />
-              Serviço não conectado
+              {DEMO_AI ? 'Serviço não conectado' : 'Aviso'}
             </span>
           )}
           {message.content}
