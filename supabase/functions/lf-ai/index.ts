@@ -317,17 +317,34 @@ async function callGemini(
   }))
 
   // A chave vai no cabeçalho (não na URL, que pode aparecer em logs).
-  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY! },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents,
-      generationConfig: { temperature: 0.7, maxOutputTokens: maxTokens },
-    }),
-  })
+  // Raciocínio "low": o modelo pensa pouco antes de responder — respostas bem mais rápidas,
+  // e para chat de vendas e geração de prompt a qualidade é a mesma.
+  const request = (lowThinking: boolean) =>
+    fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY! },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: maxTokens,
+          ...(lowThinking ? { thinkingConfig: { thinkingLevel: 'low' } } : {}),
+        },
+      }),
+    })
+  let res = await request(true)
+  let errorText = ''
+  if (res.status === 400) {
+    errorText = await res.text()
+    // Se o modelo não aceitar o ajuste de raciocínio, tenta de novo sem ele.
+    if (/thinking/i.test(errorText)) {
+      res = await request(false)
+      errorText = ''
+    }
+  }
   if (!res.ok) {
-    console.error('Gemini API Error:', res.status, await res.text())
+    console.error('Gemini API Error:', res.status, errorText || (await res.text()))
     // Repassa o status HTTP para o tratamento de erros (429 = cota/limite, 401/403 = chave inválida)
     throw Object.assign(new Error('ai_unavailable'), { status: res.status })
   }
@@ -336,7 +353,8 @@ async function callGemini(
   if (candidate?.finishReason === 'SAFETY') throw new Error('refused')
   return (
     candidate?.content?.parts
-      ?.map((p: { text?: string }) => p.text ?? '')
+      ?.filter((p: { thought?: boolean }) => !p.thought)
+      .map((p: { text?: string }) => p.text ?? '')
       .join('\n')
       .trim() ?? ''
   )
@@ -430,21 +448,21 @@ Deno.serve(async (req) => {
 
     if (body.action === 'wave_chat') {
       const conversationId = String(body.conversationId ?? '')
-      const { data: conversation } = await db
-        .from('lf_conversations')
-        .select('id')
-        .eq('id', conversationId)
-        .maybeSingle()
+      // Conversa, histórico e nome do usuário em paralelo (cada ida ao banco custa tempo).
+      // O histórico vem do banco: as mensagens do usuário já foram salvas pelo app.
+      const [{ data: conversation }, { data: rows }, { data: profile }] = await Promise.all([
+        db.from('lf_conversations').select('id').eq('id', conversationId).maybeSingle(),
+        db
+          .from('lf_messages')
+          .select('role, content, kind')
+          .eq('conversation_id', conversationId)
+          .eq('kind', 'message')
+          .order('created_at', { ascending: false })
+          .limit(HISTORY_LIMIT),
+        db.from('lf_profiles').select('name').eq('id', user.id).maybeSingle(),
+      ])
       if (!conversation) return fail(404, 'not_found', 'Conversa não encontrada.')
 
-      // Histórico real do banco (as mensagens do usuário já foram salvas pelo app).
-      const { data: rows } = await db
-        .from('lf_messages')
-        .select('role, content, kind')
-        .eq('conversation_id', conversationId)
-        .eq('kind', 'message')
-        .order('created_at', { ascending: false })
-        .limit(HISTORY_LIMIT)
       const history = (rows ?? []).reverse()
       // A conversa precisa começar com o usuário e terminar com uma pergunta dele.
       while (history.length && history[0].role !== 'user') history.shift()
@@ -455,7 +473,6 @@ Deno.serve(async (req) => {
       const { data: count, error: limitErr } = await db.rpc('lf_register_wave_message')
       if (limitErr) return limitError(limitErr.message)
 
-      const { data: profile } = await db.from('lf_profiles').select('name').eq('id', user.id).maybeSingle()
       const today = new Date().toLocaleDateString('pt-BR', {
         timeZone: 'America/Sao_Paulo',
         weekday: 'long',

@@ -82,6 +82,27 @@ async function complete(conversationId: string) {
 export const waveService = {
   isConnected: !DEMO_AI,
 
+  /** Carrega as mensagens de uma conversa (só na primeira vez que ela é aberta). */
+  async loadMessages(conversationId: string) {
+    const conversation = dataStore.get().conversations.find((c) => c.id === conversationId)
+    if (!conversation || conversation.loaded) return
+    const rows = must(
+      await supabase
+        .from('lf_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: false })
+        .limit(200),
+    )
+    const loaded = (rows ?? []).reverse().map(toMessage)
+    updateConversation(conversationId, (c) => ({
+      ...c,
+      // Mensagens enviadas enquanto carregava continuam no fim.
+      messages: [...loaded, ...c.messages.filter((m) => !loaded.some((l) => l.id === m.id))],
+      loaded: true,
+    }))
+  },
+
   /** Envia uma mensagem. Cria a conversa se necessário e retorna o id dela. */
   async send(conversationId: string | null, text: string) {
     let id = conversationId

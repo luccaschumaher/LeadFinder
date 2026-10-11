@@ -163,6 +163,8 @@ export interface Conversation {
   id: string
   title: string
   messages: ChatMessage[]
+  /** As mensagens são carregadas do banco só quando a conversa é aberta. */
+  loaded: boolean
   createdAt: string
   updatedAt: string
 }

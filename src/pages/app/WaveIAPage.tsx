@@ -97,6 +97,11 @@ function WaveChat() {
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const active = useMemo(() => conversations.find((c) => c.id === activeId) ?? null, [conversations, activeId])
+  const loadingMessages = !!active && !active.loaded
+
+  useEffect(() => {
+    if (activeId) waveService.loadMessages(activeId).catch(() => toast.error('Não foi possível carregar a conversa'))
+  }, [activeId])
   const messages = active?.messages ?? []
   const last = messages[messages.length - 1]
   const thinking = !!pending && pending === activeId && last?.role === 'user'
@@ -268,7 +273,17 @@ function WaveChat() {
           </div>
 
           <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6" aria-live="polite">
-            {messages.length === 0 ? (
+            {loadingMessages && messages.length === 0 ? (
+              <div className="mx-auto flex max-w-2xl flex-col gap-4" aria-busy="true">
+                {[70, 45, 85].map((w, i) => (
+                  <div
+                    key={i}
+                    className={cn('h-14 animate-pulse rounded-2xl bg-white/[0.05]', i % 2 ? 'self-end' : 'self-start')}
+                    style={{ width: `${w}%` }}
+                  />
+                ))}
+              </div>
+            ) : messages.length === 0 ? (
               <div className="mx-auto flex max-w-lg flex-col items-center pt-4 text-center">
                 <WaveAvatar size="lg" />
                 <h2 className="mt-8 text-lg font-semibold tracking-tight text-fg">

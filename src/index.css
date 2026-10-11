@@ -278,3 +278,22 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * Celular e telas de toque: desfoque de fundo (backdrop-filter) e brilhos com blur enorme
+ * são os efeitos mais pesados para a GPU do celular — causam travadas na rolagem.
+ * Os fundos já são quase opacos, então o visual quase não muda.
+ */
+@media (max-width: 767px), (pointer: coarse) {
+  [class*='backdrop-blur'] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  [class*='blur-['],
+  .blur-3xl {
+    filter: blur(48px) !important;
+  }
+  .animate-float {
+    will-change: transform;
+  }
+}

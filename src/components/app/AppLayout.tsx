@@ -55,7 +55,7 @@ export function AppLayout() {
       </aside>
 
       {/* Topbar móvel */}
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-line bg-ink-950/85 px-4 backdrop-blur-xl lg:hidden">
+      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-line bg-ink-950/95 px-4 backdrop-blur-xl lg:hidden">
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}

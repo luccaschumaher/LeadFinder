@@ -125,10 +125,11 @@ export const toMessage = (r: Row): ChatMessage => ({
   createdAt: r.created_at,
 })
 
-export const toConversation = (r: Row, messages: ChatMessage[]): Conversation => ({
+export const toConversation = (r: Row, messages: ChatMessage[], loaded = true): Conversation => ({
   id: r.id,
   title: r.title,
   messages,
+  loaded,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
 })

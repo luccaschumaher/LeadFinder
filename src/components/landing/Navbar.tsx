@@ -44,7 +44,7 @@ export function Navbar() {
       <div
         className={cn(
           'border-b transition-[background-color,border-color,backdrop-filter] duration-300',
-          elevated ? 'border-line bg-ink-950/75 backdrop-blur-xl backdrop-saturate-150' : 'border-transparent',
+          elevated ? 'border-line bg-ink-950/95 md:bg-ink-950/75 backdrop-blur-xl backdrop-saturate-150' : 'border-transparent',
         )}
       >
         <Container

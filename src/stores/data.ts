@@ -6,7 +6,6 @@ import {
   toConversation,
   toGeneration,
   toLead,
-  toMessage,
   toNote,
   toPrompt,
   toSale,
@@ -17,7 +16,6 @@ import { createStore, useStore } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import type {
   Activity,
-  ChatMessage,
   Company,
   Conversation,
   Favorite,
@@ -98,33 +96,21 @@ export async function loadUserData(userId: string) {
   unsubscribe?.()
   activeUserId = userId
 
-  const [
-    companies,
-    leads,
-    favorites,
-    notes,
-    searches,
-    prompts,
-    generations,
-    conversations,
-    messages,
-    sales,
-    activity,
-    usage,
-  ] = await Promise.all([
-    supabase.from('lf_companies').select('*'),
-    supabase.from('lf_leads').select('*').order('created_at', { ascending: false }),
-    supabase.from('lf_favorites').select('*').order('created_at', { ascending: false }),
-    supabase.from('lf_notes').select('*').order('created_at', { ascending: false }),
-    supabase.from('lf_searches').select('*').order('created_at', { ascending: false }).limit(200),
-    supabase.from('lf_prompts').select('*').order('updated_at', { ascending: false }),
-    supabase.from('lf_site_generations').select('*').order('created_at', { ascending: false }).limit(30),
-    supabase.from('lf_conversations').select('*').order('updated_at', { ascending: false }),
-    supabase.from('lf_messages').select('*').order('created_at', { ascending: true }),
-    supabase.from('lf_sales').select('*').order('date', { ascending: false }),
-    supabase.from('lf_activity').select('*').order('created_at', { ascending: false }).limit(60),
-    supabase.rpc('lf_usage_today').single(),
-  ])
+  const [companies, leads, favorites, notes, searches, prompts, generations, conversations, sales, activity, usage] =
+    await Promise.all([
+      supabase.from('lf_companies').select('*'),
+      supabase.from('lf_leads').select('*').order('created_at', { ascending: false }),
+      supabase.from('lf_favorites').select('*').order('created_at', { ascending: false }),
+      supabase.from('lf_notes').select('*').order('created_at', { ascending: false }),
+      supabase.from('lf_searches').select('*').order('created_at', { ascending: false }).limit(200),
+      supabase.from('lf_prompts').select('*').order('updated_at', { ascending: false }),
+      supabase.from('lf_site_generations').select('*').order('created_at', { ascending: false }).limit(30),
+      // As mensagens da LeadIA não vêm no login: cada conversa carrega as suas ao ser aberta.
+      supabase.from('lf_conversations').select('*').order('updated_at', { ascending: false }).limit(100),
+      supabase.from('lf_sales').select('*').order('date', { ascending: false }),
+      supabase.from('lf_activity').select('*').order('created_at', { ascending: false }).limit(60),
+      supabase.rpc('lf_usage_today').single(),
+    ])
 
   const saved = storage.get<SavedSearch>(searchKey(userId), { currentSearch: null, companies: [] })
   const companyMap: Record<string, Company> = {}
@@ -133,9 +119,6 @@ export async function loadUserData(userId: string) {
 
   const notesMap: Record<string, Note[]> = {}
   rows(notes).forEach((r) => (notesMap[r.company_id] ??= []).push(toNote(r)))
-
-  const messagesByConversation: Record<string, ChatMessage[]> = {}
-  rows(messages).forEach((r) => (messagesByConversation[r.conversation_id] ??= []).push(toMessage(r)))
 
   const today = must(usage) as unknown as {
     day: string
@@ -153,7 +136,7 @@ export async function loadUserData(userId: string) {
     currentSearch: saved.currentSearch,
     prompts: rows(prompts).map(toPrompt),
     generations: rows(generations).map(toGeneration),
-    conversations: rows(conversations).map((r) => toConversation(r, messagesByConversation[r.id] ?? [])),
+    conversations: rows(conversations).map((r) => toConversation(r, [], false)),
     activity: rows(activity).map(toActivity),
     sales: rows(sales).map(toSale),
     usage: {
