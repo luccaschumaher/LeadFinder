@@ -19,6 +19,7 @@ import { Apis } from './pages/Apis'
 import { Login } from './pages/Login'
 import { Overview } from './pages/Overview'
 import { Payments } from './pages/Payments'
+import { TwoFactor } from './pages/TwoFactor'
 import { Users } from './pages/Users'
 
 type Tab = 'overview' | 'users' | 'payments' | 'apis'
@@ -39,6 +40,8 @@ interface Data {
 export function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
   const [allowed, setAllowed] = useState<boolean | null>(null)
+  const [aal2, setAal2] = useState<boolean | null>(null)
+  const [recheck, setRecheck] = useState(0)
   const [notice, setNotice] = useState<string | null>(null)
 
   useEffect(() => {
@@ -47,27 +50,30 @@ export function App() {
     return () => data.subscription.unsubscribe()
   }, [])
 
+  // Conta precisa estar em lf_admins E ter confirmado o código do autenticador (aal2).
   useEffect(() => {
     if (!session) return
     let cancelled = false
-    isAdmin()
-      .then(async (ok) => {
+    Promise.all([isAdmin(), supabase.auth.mfa.getAuthenticatorAssuranceLevel()])
+      .then(async ([ok, level]) => {
         if (cancelled) return
         if (!ok) {
           setNotice('Esta conta não tem acesso ao painel.')
           await supabase.auth.signOut()
         }
         setAllowed(ok)
+        setAal2(level.data?.currentLevel === 'aal2')
       })
       .catch((e: Error) => !cancelled && setNotice(e.message))
     return () => {
       cancelled = true
     }
-  }, [session])
+  }, [session, recheck])
 
   if (session === undefined) return <div className="min-h-dvh" aria-busy="true" />
   if (!session || allowed === false) return <Login notice={notice} />
-  if (allowed === null) return <div className="min-h-dvh" aria-busy="true" />
+  if (allowed === null || aal2 === null) return <div className="min-h-dvh" aria-busy="true" />
+  if (!aal2) return <TwoFactor onVerified={() => setRecheck((n) => n + 1)} />
   return <Dashboard email={session.user.email ?? ''} />
 }
 

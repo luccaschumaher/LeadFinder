@@ -72,6 +72,7 @@ export interface PaymentFailure {
 
 function fail(message: string): never {
   if (message.includes('forbidden')) throw new Error('Esta conta não tem acesso ao painel.')
+  if (message.includes('mfa_required')) throw new Error('Confirme a verificação em duas etapas para ver os dados.')
   throw new Error(message)
 }
 
