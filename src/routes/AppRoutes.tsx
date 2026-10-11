@@ -31,6 +31,9 @@ const ForgotPasswordPage = lazy(() =>
 const ResetPasswordPage = lazy(() =>
   import('@/pages/auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })),
 )
+const TermsPage = lazy(() => import('@/pages/legal/TermsPage').then((m) => ({ default: m.TermsPage })))
+const PrivacyPage = lazy(() => import('@/pages/legal/PrivacyPage').then((m) => ({ default: m.PrivacyPage })))
+const ContactPage = lazy(() => import('@/pages/legal/ContactPage').then((m) => ({ default: m.ContactPage })))
 const OnboardingPage = lazy(() => import('@/pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage })))
 
 export function AppRoutes() {
@@ -57,36 +60,9 @@ export function AppRoutes() {
         />
         <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
         <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
-        <Route
-          path={ROUTES.contact}
-          element={
-            <StatusPage
-              eyebrow="Contato"
-              title="Canais de contato em breve"
-              description="Os canais oficiais de atendimento do LeadFinder serão publicados nesta página."
-            />
-          }
-        />
-        <Route
-          path={ROUTES.privacy}
-          element={
-            <StatusPage
-              eyebrow="Privacidade"
-              title="Política de Privacidade"
-              description="A Política de Privacidade do LeadFinder está sendo elaborada e será publicada antes do lançamento."
-            />
-          }
-        />
-        <Route
-          path={ROUTES.terms}
-          element={
-            <StatusPage
-              eyebrow="Termos"
-              title="Termos de Uso"
-              description="Os Termos de Uso do LeadFinder estão sendo elaborados e serão publicados antes do lançamento."
-            />
-          }
-        />
+        <Route path={ROUTES.contact} element={<ContactPage />} />
+        <Route path={ROUTES.privacy} element={<PrivacyPage />} />
+        <Route path={ROUTES.terms} element={<TermsPage />} />
         <Route
           path={ROUTES.unauthorized}
           element={
