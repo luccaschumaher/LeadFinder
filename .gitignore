@@ -27,6 +27,8 @@ dist-ssr
 .env
 .env.*
 !.env.example
+# Só valores públicos de produção (nada secreto)
+!.env.production
 
 # Configuração local de ferramentas
 .claude/
