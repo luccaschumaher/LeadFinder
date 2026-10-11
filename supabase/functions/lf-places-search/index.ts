@@ -11,7 +11,7 @@
 // SUPABASE_URL, SUPABASE_ANON_KEY e SUPABASE_SERVICE_ROLE_KEY são fornecidos pelo Supabase.
 // =============================================================================
 
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2.117.3'
 
 const SERPER_KEY = Deno.env.get('SERPER_API_KEY')
 const GOOGLE_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY')

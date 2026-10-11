@@ -16,9 +16,9 @@
 // As chaves ficam SÓ aqui no servidor — nunca em variáveis VITE_ do frontend.
 // =============================================================================
 
-import Anthropic from 'npm:@anthropic-ai/sdk'
-import { AnthropicVertex } from 'npm:@anthropic-ai/vertex-sdk'
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import Anthropic from 'npm:@anthropic-ai/sdk@0.133.0'
+import { AnthropicVertex } from 'npm:@anthropic-ai/vertex-sdk@0.20.4'
+import { createClient } from 'npm:@supabase/supabase-js@2.117.3'
 
 const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const VERTEX_SERVICE_ACCOUNT = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT')
@@ -198,6 +198,17 @@ FORMATAÇÃO DAS RESPOSTAS (o chat exibe Markdown com visual caprichado — use 
 - Não use tabelas, títulos "# " ou "## ", nem blocos de código (exceto se pedirem código).
 - Termine com uma seção "### ✅ Próximo passo" curta ou uma pergunta que ajude o usuário a avançar.`
 }
+
+/**
+ * Nome do usuário para o prompt da LeadIA: só letras, números, espaços e pontuação simples,
+ * no máximo 40 caracteres. Impede que um "nome" carregue instruções para manipular a IA.
+ */
+const safeName = (value: unknown) =>
+  String(value ?? '')
+    .replace(/[^\p{L}\p{N} .'-]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 40)
 
 /** Corta textos longos: limita o custo por chamada mesmo se alguém burlar o limite do app. */
 const clip = (value: unknown, max: number) => String(value ?? '').slice(0, max)
@@ -571,7 +582,7 @@ Deno.serve(async (req) => {
       let reply = ''
       try {
         reply = await generateAIResponse(
-          leadIASystem(String(body.mascot ?? ''), String(profile?.name ?? '').trim(), today),
+          leadIASystem(String(body.mascot ?? ''), safeName(profile?.name), today),
           history.map((m) => ({ role: m.role as 'user' | 'assistant', content: clip(m.content, 4000) })),
           4096,
           { userId: user.id, action: 'wave_chat' },

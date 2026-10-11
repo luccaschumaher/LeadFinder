@@ -10,7 +10,7 @@
 //   npx supabase functions deploy lf-cakto-webhook --no-verify-jwt
 // =============================================================================
 
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2.117.3'
 
 const SECRET = Deno.env.get('CAKTO_WEBHOOK_SECRET')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!

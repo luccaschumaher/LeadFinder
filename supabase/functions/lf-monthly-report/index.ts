@@ -11,7 +11,7 @@
 //   npx supabase functions deploy lf-monthly-report --no-verify-jwt
 // =============================================================================
 
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2.117.3'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -186,6 +186,20 @@ Deno.serve(async (req) => {
     if (error) return json(403, { error: 'forbidden', message: 'Só administradores podem enviar o relatório.' })
   }
   if (!RESEND_KEY) return json(500, { error: 'not_configured', message: 'RESEND_API_KEY não configurada.' })
+
+  // Envio manual: no máximo um a cada 5 minutos (protege a cota de e-mails).
+  if (!fromCron) {
+    const { data: lastManual } = await admin
+      .from('lf_private_settings')
+      .select('value')
+      .eq('key', 'monthly_report_manual_at')
+      .maybeSingle()
+    if (lastManual?.value && Date.now() - Number(lastManual.value) < 5 * 60_000)
+      return json(429, { error: 'too_soon', message: 'Aguarde alguns minutos antes de enviar o relatório de novo.' })
+    await admin
+      .from('lf_private_settings')
+      .upsert({ key: 'monthly_report_manual_at', value: String(Date.now()) }, { onConflict: 'key' })
+  }
 
   // deno-lint-ignore no-explicit-any
   let body: any = {}
