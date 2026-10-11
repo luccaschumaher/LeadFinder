@@ -297,22 +297,10 @@ function NotificationsSection() {
     <Section title="Notificações" description="Escolha os avisos que deseja receber.">
       <div className="space-y-5">
         <Switch
-          label="Resumo semanal por e-mail"
-          description="Toda segunda de manhã: suas buscas, leads e vendas da semana. Só chega se você usou o LeadFinder na semana."
-          checked={n.weeklySummary}
-          onChange={(v) => set('weeklySummary', v)}
-        />
-        <Switch
           label="Alertas de tokens"
           description="Aviso na tela quando seus tokens do dia estiverem acabando."
           checked={n.tokenAlerts}
           onChange={(v) => set('tokenAlerts', v)}
-        />
-        <Switch
-          label="Novidades do produto por e-mail"
-          description="Só quando houver algo importante: novos recursos e melhorias do LeadFinder."
-          checked={n.productUpdates}
-          onChange={(v) => set('productUpdates', v)}
         />
       </div>
     </Section>
