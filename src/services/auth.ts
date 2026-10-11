@@ -12,7 +12,6 @@ import type { AvatarId, PlanId, Preferences, User } from '@/types'
  */
 
 const defaultPreferences = (): Preferences => ({
-  reduceMotion: false,
   notifications: { weeklySummary: true, productUpdates: true, tokenAlerts: true },
 })
 

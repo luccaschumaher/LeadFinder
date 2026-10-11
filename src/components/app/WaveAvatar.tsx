@@ -17,8 +17,7 @@ export function WaveAvatar({
 }) {
   const user = useUser()
   const id = user?.preferences.mascot ?? DEFAULT_MASCOT
-  const animated = !user?.preferences.reduceMotion
 
-  if (size === 'lg') return <Mascot id={id} mood={state} size={132} animated={animated} className={className} />
+  if (size === 'lg') return <Mascot id={id} mood={state} size={132} animated className={className} />
   return <ProfileAvatar id={id} size={size === 'sm' ? 28 : 44} className={className} />
 }

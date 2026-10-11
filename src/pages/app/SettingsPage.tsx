@@ -22,6 +22,7 @@ import { Card } from '@/components/ui/display'
 import { Field, Input, PasswordInput, Switch } from '@/components/ui/Field'
 import { DEFAULT_AVATAR, DEFAULT_MASCOT } from '@/data/characters'
 import { SECTION_IDS } from '@/config/navigation'
+import { LEGAL } from '@/config/legal'
 import { ROUTES } from '@/config/routes'
 import { useCaptcha } from '@/hooks/useCaptcha'
 import { CAPTCHA_REQUIRED_MESSAGE } from '@/lib/captcha'
@@ -167,10 +168,7 @@ function ProfileSection() {
               />
             )}
           </Field>
-          <Field
-            label="E-mail"
-            hint="A alteração de e-mail exigirá confirmação e será liberada com a autenticação real."
-          >
+          <Field label="E-mail" hint={`Para alterar o e-mail, entre em contato com o suporte: ${LEGAL.email}`}>
             {({ id, describedBy }) => (
               <Input id={id} aria-describedby={describedBy} value={user.email} disabled readOnly />
             )}
@@ -283,15 +281,6 @@ function AppearanceSection() {
             </div>
           </div>
         </div>
-        <Switch
-          label="Reduzir animações"
-          description="Desativa transições e movimentos da interface. Também respeitamos a preferência do sistema."
-          checked={user.preferences.reduceMotion}
-          onChange={(v) => {
-            authService.updatePreferences({ reduceMotion: v })
-            toast.success(v ? 'Animações reduzidas' : 'Animações ativadas')
-          }}
-        />
       </div>
     </Section>
   )
@@ -305,29 +294,26 @@ function NotificationsSection() {
     toast.success('Preferência salva')
   }
   return (
-    <Section title="Notificações" description="Escolha o que deseja receber por e-mail.">
+    <Section title="Notificações" description="Escolha os avisos que deseja receber.">
       <div className="space-y-5">
         <Switch
-          label="Resumo semanal"
-          description="Seus leads, buscas e oportunidades da semana."
+          label="Resumo semanal por e-mail"
+          description="Toda segunda de manhã: suas buscas, leads e vendas da semana. Só chega se você usou o LeadFinder na semana."
           checked={n.weeklySummary}
           onChange={(v) => set('weeklySummary', v)}
         />
         <Switch
           label="Alertas de tokens"
-          description="Aviso quando seus tokens estiverem acabando."
+          description="Aviso na tela quando seus tokens do dia estiverem acabando."
           checked={n.tokenAlerts}
           onChange={(v) => set('tokenAlerts', v)}
         />
         <Switch
-          label="Novidades do produto"
-          description="Novas funcionalidades e melhorias do LeadFinder."
+          label="Novidades do produto por e-mail"
+          description="Só quando houver algo importante: novos recursos e melhorias do LeadFinder."
           checked={n.productUpdates}
           onChange={(v) => set('productUpdates', v)}
         />
-        <p className="text-[12px] text-fg-subtle">
-          Suas preferências ficam salvas na conta. O envio dos e-mails será ativado em breve.
-        </p>
       </div>
     </Section>
   )

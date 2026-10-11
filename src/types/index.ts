@@ -29,7 +29,6 @@ export interface OnboardingState {
 }
 
 export interface Preferences {
-  reduceMotion: boolean
   /** Personagem da LeadIA. */
   mascot?: MascotId
   notifications: {

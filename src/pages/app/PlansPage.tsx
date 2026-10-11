@@ -2,6 +2,7 @@ import { Check, Coins, CreditCard, Minus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { DemoNotice } from '@/components/app/notices'
 import { PageHeader } from '@/components/app/PageHeader'
+import { ComingSoonPlan } from '@/components/brand/ComingSoonPlan'
 import { PlanBadge } from '@/components/brand/PlanBadge'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
@@ -248,6 +249,8 @@ export function PlansPage() {
           )
         })}
       </div>
+
+      <ComingSoonPlan className="mt-3" />
 
       <Card className="mt-6 overflow-hidden">
         <div className="overflow-x-auto">

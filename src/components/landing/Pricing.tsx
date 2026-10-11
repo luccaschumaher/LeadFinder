@@ -6,6 +6,7 @@ import { SECTION_IDS } from '@/config/navigation'
 import { PLANS, planFeatureList, type Plan } from '@/config/plans'
 import { ROUTES } from '@/config/routes'
 import { cn } from '@/lib/cn'
+import { ComingSoonPlan } from '@/components/brand/ComingSoonPlan'
 
 export function Pricing() {
   return (
@@ -33,6 +34,10 @@ export function Pricing() {
             </Reveal>
           ))}
         </div>
+
+        <Reveal delay={0.15}>
+          <ComingSoonPlan className="mt-4" />
+        </Reveal>
 
         <Reveal delay={0.2}>
           <p className="mx-auto mt-10 max-w-2xl text-center text-sm leading-relaxed text-fg-subtle">

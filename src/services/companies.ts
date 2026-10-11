@@ -5,11 +5,13 @@ import { dbError, must, toSearch } from '@/lib/db'
 import { AppError } from '@/lib/errors'
 import { invokeFunction } from '@/lib/functions'
 import { supabase } from '@/lib/supabase'
+import { toast } from '@/lib/toast'
 import { delay, todayKey } from '@/lib/utils'
 import { currentUserId, dataStore, type DataState } from '@/stores/data'
 import { sessionStore } from '@/stores/session'
 import type { Company, CompanySource, SearchQuery, SearchSession } from '@/types'
 import { logActivity } from './activity'
+import { storage } from '@/lib/storage'
 
 /**
  * Busca de empresas.
@@ -69,12 +71,40 @@ const noTokensError = () =>
     'Seus tokens de hoje acabaram. Eles renovam à meia-noite — ou faça upgrade para ver mais empresas por dia.',
   )
 
+/**
+ * Alerta de tokens (Configurações › Notificações): avisa uma vez por dia quando restam
+ * 20% ou menos e quando acabam.
+ */
+function tokenAlert(used: number) {
+  const user = sessionStore.get().user
+  if (!user || user.preferences.notifications?.tokenAlerts === false) return
+  const total = getPlan(user.plan).limits.tokens
+  const left = Math.max(0, total - used)
+  const level = left === 0 ? 'empty' : left <= Math.ceil(total * 0.2) ? 'low' : null
+  if (!level) return
+  const key = `token-alert:${user.id}:${todayKey()}`
+  const shown = storage.get<string[]>(key, [])
+  if (shown.includes(level)) return
+  storage.set(key, [...shown, level])
+  if (level === 'empty')
+    toast.info(
+      'Seus tokens de hoje acabaram',
+      'Eles renovam à meia-noite. Quer ver mais empresas por dia? Confira os planos.',
+    )
+  else toast.info(`Restam ${left} tokens hoje`, 'Cada empresa exibida consome 1 token. Eles renovam à meia-noite.')
+}
+
+function setTokens(used: number) {
+  dataStore.set((s) => ({ ...s, usage: { ...s.usage, tokens: { day: todayKey(), used } } }))
+  tokenAlert(used)
+}
+
 /** Debita no servidor e atualiza o saldo local com o valor confirmado. */
 async function consumeTokens(amount: number) {
   if (amount < 1) return
   const { data, error } = await supabase.rpc('lf_consume_tokens', { p_amount: amount * TOKENS_PER_COMPANY })
   if (error) throw dbError(error)
-  dataStore.set((s) => ({ ...s, usage: { ...s.usage, tokens: { day: todayKey(), used: data as number } } }))
+  setTokens(data as number)
 }
 
 /** Junta empresas (pendentes + iniciais + próximas páginas) até `want`. */
@@ -118,9 +148,6 @@ async function invokeSearch(body: Record<string, unknown>): Promise<FunctionResu
     throw error
   }
 }
-
-const setTokens = (used: number) =>
-  dataStore.set((s) => ({ ...s, usage: { ...s.usage, tokens: { day: todayKey(), used } } }))
 
 async function realSearch(query: SearchQuery, quantity: number) {
   const want = Math.min(quantity, Math.floor(tokenBalance() / TOKENS_PER_COMPANY))

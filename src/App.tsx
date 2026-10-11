@@ -4,13 +4,11 @@ import { Toaster } from '@/components/ui/Toast'
 import { AppRoutes } from '@/routes/AppRoutes'
 import { ErrorBoundary } from '@/routes/ErrorBoundary'
 import { ScrollManager } from '@/routes/ScrollManager'
-import { useUser } from '@/stores/session'
 
 export default function App() {
-  const user = useUser()
   return (
-    // Respeita a preferência do sistema e a opção "Reduzir animações" do usuário.
-    <MotionConfig reducedMotion={user?.preferences.reduceMotion ? 'always' : 'user'}>
+    // Respeita a preferência de "reduzir movimento" do sistema operacional.
+    <MotionConfig reducedMotion="user">
       <BrowserRouter>
         <ErrorBoundary>
           <ScrollManager />
