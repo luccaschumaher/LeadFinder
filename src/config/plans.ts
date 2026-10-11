@@ -16,7 +16,7 @@ export interface PlanLimits {
   /** Gerações diárias no Gerador de Prompts para Sites. 0 = sem acesso. */
   siteGenerationsPerDay: number
   waveIA: boolean
-  /** Mensagens por dia para a WaveIA (validado no banco por lf_register_wave_message). */
+  /** Mensagens por dia para a LeadIA (validado no banco por lf_register_wave_message). */
   waveMessagesPerDay: number
 }
 
@@ -66,7 +66,7 @@ export const PLANS: Plan[] = [
   {
     id: 'diamond',
     name: 'Diamond',
-    description: 'Para uma operação completa, com a assistente WaveIA.',
+    description: 'Para uma operação completa, com a assistente LeadIA.',
     limits: { tokens: 120, savedPrompts: UNLIMITED, siteGenerationsPerDay: 20, waveIA: true, waveMessagesPerDay: 30 },
     priceLabel: 'R$ 99,90/mês',
     checkoutUrl: 'https://pay.cakto.com.br/asgfhan_1167097',
@@ -126,7 +126,7 @@ export function planFeatureList(plan: Plan): { label: string; included: boolean 
       included: limits.siteGenerationsPerDay > 0,
     },
     {
-      label: limits.waveIA ? `WaveIA: até ${limits.waveMessagesPerDay} mensagens por dia` : 'Sem acesso à WaveIA',
+      label: limits.waveIA ? `LeadIA: até ${limits.waveMessagesPerDay} mensagens por dia` : 'Sem acesso à LeadIA',
       included: limits.waveIA,
     },
   ]

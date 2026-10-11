@@ -53,7 +53,7 @@ const MODULES: Module[] = [
   },
   {
     index: '04',
-    title: 'WaveIA',
+    title: 'LeadIA',
     description:
       'Um assistente inteligente para apoiar sua prospecção e a venda de sites, do primeiro contato à proposta.',
     icon: AudioWaveform,

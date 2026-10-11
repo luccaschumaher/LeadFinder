@@ -1,6 +1,6 @@
 import { ArrowLeft, Compass, ShieldAlert } from 'lucide-react'
 import { lazy, Suspense } from 'react'
-import { Route, Routes } from 'react-router'
+import { Navigate, Route, Routes } from 'react-router'
 import { AppLayout } from '@/components/app/AppLayout'
 import { ButtonLink } from '@/components/ui/Button'
 import { ROUTES } from '@/config/routes'
@@ -137,7 +137,8 @@ export function AppRoutes() {
           <Route path="prompts" element={<PromptsPage />} />
           <Route path="financeiro" element={<FinancePage />} />
           <Route path="gerador" element={<SiteGeneratorPage />} />
-          <Route path="waveia" element={<WaveIAPage />} />
+          <Route path="leadia" element={<WaveIAPage />} />
+          <Route path="waveia" element={<Navigate to="/app/leadia" replace />} />
           <Route path="planos" element={<PlansPage />} />
           <Route path="configuracoes" element={<SettingsPage />} />
           <Route

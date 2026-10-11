@@ -5,7 +5,7 @@
 
 export type PlanId = 'free' | 'silver' | 'gold' | 'diamond'
 
-/** Personagens do LeadFinder: usados como foto de perfil e como mascote da WaveIA. */
+/** Personagens do LeadFinder: usados como foto de perfil e como mascote da LeadIA. */
 export type CharacterId = 'robot' | 'dragon' | 'alien' | 'puppy'
 export type AvatarId = CharacterId
 export type MascotId = CharacterId
@@ -30,7 +30,7 @@ export interface OnboardingState {
 
 export interface Preferences {
   reduceMotion: boolean
-  /** Personagem da WaveIA. */
+  /** Personagem da LeadIA. */
   mascot?: MascotId
   notifications: {
     weeklySummary: boolean

@@ -3,7 +3,7 @@ import { DEFAULT_MASCOT } from '@/data/characters'
 import { useUser } from '@/stores/session'
 
 /**
- * Personagem escolhido pelo usuário para representar a WaveIA.
+ * Personagem escolhido pelo usuário para representar a LeadIA.
  * `lg` mostra o corpo inteiro animado; `sm`/`md` mostram o avatar circular.
  */
 export function WaveAvatar({

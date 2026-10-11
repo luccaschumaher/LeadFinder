@@ -30,3 +30,6 @@ dist-ssr
 
 # Configuração local de ferramentas
 .claude/
+
+# Arquivos temporários da CLI do Supabase
+supabase/.temp/

@@ -3,7 +3,7 @@ import { SendHorizontal } from 'lucide-react'
 // Alturas fixas para a forma de onda (evita valores aleatórios a cada renderização).
 const BARS = [6, 10, 16, 24, 14, 30, 20, 36, 26, 18, 32, 22, 12, 28, 18, 10, 22, 14, 8, 16, 26, 12, 6, 10]
 
-/** Prévia ilustrativa do WaveIA. */
+/** Prévia ilustrativa da LeadIA. */
 export function WaveIAPreview() {
   return (
     <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-stretch">
@@ -35,7 +35,7 @@ export function WaveIAPreview() {
           <span className="animate-caret ml-0.5 inline-block h-3 w-px translate-y-0.5 bg-(--accent)" />
         </div>
         <div className="mt-auto flex items-center justify-between rounded-lg border border-line bg-ink-950/70 px-3 py-2 text-[11px] text-fg-subtle">
-          Pergunte ao WaveIA
+          Pergunte à LeadIA
           <SendHorizontal className="size-3.5" />
         </div>
       </div>

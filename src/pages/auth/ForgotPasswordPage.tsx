@@ -5,6 +5,9 @@ import { AuthLayout } from '@/components/auth/AuthLayout'
 import { Button } from '@/components/ui/Button'
 import { Field, Input } from '@/components/ui/Field'
 import { ROUTES } from '@/config/routes'
+import { useCaptcha } from '@/hooks/useCaptcha'
+import { CAPTCHA_REQUIRED_MESSAGE } from '@/lib/captcha'
+import { errorMessage } from '@/lib/errors'
 import { validateEmail } from '@/lib/validation'
 import { authService } from '@/services/auth'
 
@@ -12,15 +15,23 @@ export function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState<string>()
   const [status, setStatus] = useState<'idle' | 'loading' | 'done'>('idle')
+  const captcha = useCaptcha()
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     const err = validateEmail(email)
     setError(err)
     if (err) return
+    if (!captcha.ready) return setError(CAPTCHA_REQUIRED_MESSAGE)
     setStatus('loading')
-    await authService.requestPasswordReset(email)
-    setStatus('done')
+    try {
+      await authService.requestPasswordReset(email, captcha.token)
+      setStatus('done')
+    } catch (e) {
+      setError(errorMessage(e))
+      setStatus('idle')
+      captcha.reset()
+    }
   }
 
   const back = (
@@ -84,6 +95,7 @@ export function ForgotPasswordPage() {
             />
           )}
         </Field>
+        {captcha.widget}
         <Button type="submit" loading={status === 'loading'} className="w-full">
           Enviar link de recuperação
         </Button>

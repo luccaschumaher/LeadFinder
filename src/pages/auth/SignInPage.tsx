@@ -5,6 +5,8 @@ import { AuthLayout } from '@/components/auth/AuthLayout'
 import { Button } from '@/components/ui/Button'
 import { Checkbox, Field, Input, PasswordInput } from '@/components/ui/Field'
 import { ROUTES } from '@/config/routes'
+import { useCaptcha } from '@/hooks/useCaptcha'
+import { CAPTCHA_REQUIRED_MESSAGE } from '@/lib/captcha'
 import { errorMessage } from '@/lib/errors'
 import { validateEmail, type Errors } from '@/lib/validation'
 import { authService } from '@/services/auth'
@@ -24,6 +26,7 @@ export function SignInPage() {
   const [errors, setErrors] = useState<Errors<Form>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const captcha = useCaptcha()
 
   const update = (key: keyof Form, value: string) => {
     setForm((f) => ({ ...f, [key]: value }))
@@ -39,13 +42,15 @@ export function SignInPage() {
     }
     setErrors(next)
     if (next.email || next.password) return
+    if (!captcha.ready) return setFormError(CAPTCHA_REQUIRED_MESSAGE)
     setLoading(true)
     try {
-      const user = await authService.signIn({ ...form, remember })
+      const user = await authService.signIn({ ...form, remember, captchaToken: captcha.token })
       navigate(user.onboarding.completed ? redirectTo : ROUTES.onboarding, { replace: true })
     } catch (err) {
       setFormError(errorMessage(err))
       setLoading(false)
+      captcha.reset()
     }
   }
 
@@ -117,6 +122,7 @@ export function SignInPage() {
           checked={remember}
           onChange={(e) => setRemember(e.target.checked)}
         />
+        {captcha.widget}
         <Button type="submit" size="md" loading={loading} className="mt-1 w-full">
           {loading ? 'Entrando…' : 'Entrar'}
         </Button>

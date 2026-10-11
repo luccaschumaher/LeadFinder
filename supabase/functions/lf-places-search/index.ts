@@ -1,17 +1,19 @@
 // =============================================================================
 // LeadFinder — Edge Function "lf-places-search"
 //
-// Busca empresas no Google Places (Text Search, API nova) com a chave guardada
-// no servidor, desconta 1 token por empresa EXIBIDA e devolve só o que foi pago.
-// O excedente de cada página fica em lf_search_sessions para o "carregar mais".
+// Busca empresas do Google Maps com a chave guardada no servidor, desconta
+// 1 token por empresa EXIBIDA e devolve só o que foi pago. O excedente de cada
+// página fica em lf_search_sessions para o "carregar mais".
 //
-// Secret necessário (Supabase › Edge Functions › Secrets):
-//   GOOGLE_PLACES_API_KEY
+// Fonte dos dados (Supabase › Edge Functions › Secrets), por ordem de prioridade:
+//   SERPER_API_KEY         — Serper.dev (resultados do Google Maps, bem mais barato)
+//   GOOGLE_PLACES_API_KEY  — Google Places oficial (Text Search, API nova)
 // SUPABASE_URL, SUPABASE_ANON_KEY e SUPABASE_SERVICE_ROLE_KEY são fornecidos pelo Supabase.
 // =============================================================================
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
+const SERPER_KEY = Deno.env.get('SERPER_API_KEY')
 const GOOGLE_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -69,6 +71,17 @@ interface Company {
 // deno-lint-ignore no-explicit-any
 type Place = Record<string, any>
 
+/** Só aceita links http(s): um "site" como javascript:... nunca chega ao navegador. */
+function safeUrl(value: unknown) {
+  if (typeof value !== 'string') return undefined
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : undefined
+  } catch {
+    return undefined
+  }
+}
+
 function toCompany(p: Place, segment: string): Company {
   // deno-lint-ignore no-explicit-any
   const components: any[] = p.addressComponents ?? []
@@ -81,15 +94,63 @@ function toCompany(p: Place, segment: string): Company {
     city: find('administrative_area_level_2')?.longText ?? find('locality')?.longText ?? '',
     state: find('administrative_area_level_1')?.shortText ?? undefined,
     phone: p.nationalPhoneNumber ?? undefined,
-    website: p.websiteUri ?? undefined,
+    website: safeUrl(p.websiteUri),
     rating: typeof p.rating === 'number' ? p.rating : undefined,
     reviewCount: typeof p.userRatingCount === 'number' ? p.userRatingCount : undefined,
     source: 'google_places',
   }
 }
 
+interface Page {
+  companies: Company[]
+  next?: string
+}
+
+/** "Rua X, 123 - Bairro, Cidade - SP, 12345-678" → cidade e UF. */
+function cityFromAddress(address: string) {
+  const match = address.match(/(?:^|,)\s*([^,]+?)\s+-\s+([A-Z]{2})(?:\s*,|\s*$)/)
+  return match ? { city: match[1].trim(), state: match[2] } : null
+}
+
+/** Uma página da Serper (Google Maps). O "token" da próxima página é o número dela. */
+async function serperPage(q: string, segment: string, region: string, pageToken?: string): Promise<Page> {
+  const page = Number(pageToken) || 1
+  const res = await fetch('https://google.serper.dev/maps', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-API-KEY': SERPER_KEY! },
+    body: JSON.stringify({ q, gl: 'br', hl: 'pt-br', page }),
+  })
+  if (!res.ok) {
+    console.error('Serper', res.status, await res.text())
+    throw new Error('places_failed')
+  }
+  const data = await res.json()
+  const places: Place[] = data.places ?? []
+  const companies = places
+    .filter((p) => p.title && (p.placeId || p.cid))
+    .map((p): Company => {
+      const address = String(p.address ?? '')
+      const place = cityFromAddress(address)
+      return {
+        id: String(p.placeId ?? `cid_${p.cid}`),
+        name: String(p.title),
+        category: String(p.type ?? p.category ?? p.types?.[0] ?? segment),
+        address,
+        city: place?.city ?? region,
+        state: place?.state,
+        phone: p.phoneNumber ?? undefined,
+        website: safeUrl(p.website),
+        rating: typeof p.rating === 'number' ? p.rating : undefined,
+        reviewCount: typeof p.ratingCount === 'number' ? p.ratingCount : undefined,
+        source: 'google_places',
+      }
+    })
+  // A Serper não diz se há mais páginas: segue enquanto a página vier cheia.
+  return { companies, next: places.length >= 10 ? String(page + 1) : undefined }
+}
+
 /** Uma página do Text Search. Empresas fechadas definitivamente são descartadas. */
-async function googlePage(textQuery: string, minRating: number, pageToken?: string) {
+async function googlePage(textQuery: string, segment: string, minRating: number, pageToken?: string): Promise<Page> {
   const body: Record<string, unknown> = { textQuery, languageCode: 'pt-BR', regionCode: 'BR', pageSize: PAGE_SIZE }
   if (minRating > 0) body.minRating = minRating
   if (pageToken) body.pageToken = pageToken
@@ -104,10 +165,13 @@ async function googlePage(textQuery: string, minRating: number, pageToken?: stri
   }
   const data = await res.json()
   const places: Place[] = (data.places ?? []).filter((p: Place) => p.businessStatus !== 'CLOSED_PERMANENTLY')
-  return { places, next: data.nextPageToken as string | undefined }
+  return { companies: places.map((p) => toCompany(p, segment)), next: data.nextPageToken as string | undefined }
 }
 
-const passes = (c: Company, f: Filters) => (!f.onlyWithoutWebsite || !c.website) && (!f.onlyWithPhone || !!c.phone)
+const passes = (c: Company, f: Filters) =>
+  (!f.onlyWithoutWebsite || !c.website) &&
+  (!f.onlyWithPhone || !!c.phone) &&
+  (f.minRating <= 0 || (c.rating ?? 0) >= f.minRating)
 
 /** Busca páginas até juntar `want` empresas (ou acabar). */
 async function fill(
@@ -116,13 +180,20 @@ async function fill(
   query: { segment: string; region: string; filters: Filters },
   token: string | undefined,
   pages: number,
+  beforeFetch: () => Promise<void>,
 ) {
   let found = 0
+  const seen = new Set(pool.map((c) => c.id))
   while (pool.length < want && pages < MAX_PAGES && (pages === 0 || token)) {
-    const page = await googlePage(`${query.segment} em ${query.region}`, query.filters.minRating, token)
+    const q = `${query.segment} em ${query.region}`
+    await beforeFetch()
+    const page = SERPER_KEY
+      ? await serperPage(q, query.segment, query.region, token)
+      : await googlePage(q, query.segment, query.filters.minRating, token)
     pages += 1
     token = page.next
-    const companies = page.places.map((p) => toCompany(p, query.segment)).filter((c) => passes(c, query.filters))
+    const companies = page.companies.filter((c) => !seen.has(c.id) && passes(c, query.filters))
+    companies.forEach((c) => seen.add(c.id))
     found += companies.length
     pool = [...pool, ...companies]
   }
@@ -132,7 +203,7 @@ async function fill(
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return fail(405, 'method_not_allowed', 'Use POST.')
-  if (!GOOGLE_KEY) return fail(500, 'not_configured', 'A busca ainda não foi configurada no servidor.')
+  if (!SERPER_KEY && !GOOGLE_KEY) return fail(500, 'not_configured', 'A busca ainda não foi configurada no servidor.')
 
   const authorization = req.headers.get('Authorization')
   const apikey = req.headers.get('apikey') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -185,6 +256,19 @@ Deno.serve(async (req) => {
     return error ? null : (data as number)
   }
 
+  /** Conta a consulta no limite diário (lf_register_search) antes de gastar créditos da fonte. */
+  async function registerSearch() {
+    const { error } = await db.rpc('lf_register_search')
+    if (error)
+      throw new Error(
+        error.message.includes('too_fast')
+          ? 'too_fast'
+          : error.message.includes('search_limit')
+            ? 'search_limit'
+            : 'register_failed',
+      )
+  }
+
   try {
     if (body.action === 'search') {
       const segment = String(body.query?.segment ?? '')
@@ -210,7 +294,7 @@ Deno.serve(async (req) => {
         .eq('user_id', user.id)
         .lt('updated_at', new Date(Date.now() - SESSION_TTL_MS).toISOString())
 
-      const result = await fill([], want, query, undefined, 0)
+      const result = await fill([], want, query, undefined, 0, registerSearch)
       const shown = result.pool.slice(0, want)
       const pending = result.pool.slice(want)
       const used = await charge(shown.length)
@@ -266,6 +350,7 @@ Deno.serve(async (req) => {
         session.query,
         session.next_page_token ?? undefined,
         session.pages_fetched,
+        registerSearch,
       )
       const shown = result.pool.slice(0, want)
       const pending = result.pool.slice(want)
@@ -298,10 +383,14 @@ Deno.serve(async (req) => {
 
     return fail(400, 'bad_request', 'Ação desconhecida.')
   } catch (error) {
+    if (error instanceof Error && error.message === 'search_limit')
+      return fail(429, 'limit_reached', 'Você atingiu o limite de buscas de hoje. Ele renova à meia-noite.')
+    if (error instanceof Error && error.message === 'too_fast')
+      return fail(429, 'limit_reached', 'Aguarde alguns segundos antes de buscar de novo.')
     console.error(error)
     const message =
       error instanceof Error && error.message === 'places_failed'
-        ? 'Não foi possível consultar o Google agora. Tente novamente em instantes. Nenhum token foi consumido.'
+        ? 'Não foi possível consultar o Google Maps agora. Tente novamente em instantes. Nenhum token foi consumido.'
         : 'Não foi possível concluir a busca. Tente novamente.'
     return fail(502, 'search_failed', message)
   }

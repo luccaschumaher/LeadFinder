@@ -1,5 +1,5 @@
 import { Check, Coins, CreditCard, Minus } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DemoNotice } from '@/components/app/notices'
 import { PageHeader } from '@/components/app/PageHeader'
 import { PlanBadge } from '@/components/brand/PlanBadge'
@@ -13,6 +13,7 @@ import { usePlan } from '@/hooks/usePlan'
 import { cn } from '@/lib/cn'
 import { errorMessage } from '@/lib/errors'
 import { toast } from '@/lib/toast'
+import { authService } from '@/services/auth'
 import { billingService } from '@/services/billing'
 
 const ROWS: { label: string; value: (p: Plan) => string | boolean }[] = [
@@ -33,13 +34,40 @@ const ROWS: { label: string; value: (p: Plan) => string | boolean }[] = [
     label: 'Gerador de prompts para sites',
     value: (p) => (p.limits.siteGenerationsPerDay ? `${p.limits.siteGenerationsPerDay} por dia` : false),
   },
-  { label: 'WaveIA', value: (p) => (p.limits.waveIA ? `${p.limits.waveMessagesPerDay} mensagens/dia` : false) },
+  { label: 'LeadIA', value: (p) => (p.limits.waveIA ? `${p.limits.waveMessagesPerDay} mensagens/dia` : false) },
 ]
 
 export function PlansPage() {
   const { plan: current, tokens, prompts, siteGenerations } = usePlan()
   const [target, setTarget] = useState<Plan | null>(null)
   const [loading, setLoading] = useState(false)
+  const [awaitingPayment, setAwaitingPayment] = useState(false)
+
+  // Depois de abrir o checkout, confere o plano sempre que a pessoa volta para esta aba.
+  useEffect(() => {
+    if (!awaitingPayment) return
+    const before = current.id
+    const check = () => {
+      if (document.visibilityState !== 'visible') return
+      authService
+        .refreshPlan()
+        .then((plan) => {
+          if (plan && comparePlans(plan, before) > 0) {
+            setAwaitingPayment(false)
+            toast.success('Pagamento confirmado', 'Seu novo plano já está ativo. Bom proveito!')
+          }
+        })
+        .catch(() => undefined)
+    }
+    const timer = window.setInterval(check, 15000)
+    document.addEventListener('visibilitychange', check)
+    window.addEventListener('focus', check)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', check)
+      window.removeEventListener('focus', check)
+    }
+  }, [awaitingPayment, current.id])
 
   const goToCheckout = () => {
     if (!target) return
@@ -47,8 +75,9 @@ export function PlansPage() {
       billingService.openCheckout(target.id)
       toast.info(
         'Checkout aberto em uma nova aba',
-        'Conclua o pagamento na Cakto. A ativação automática do plano chega com o backend.',
+        'Conclua o pagamento na Cakto. Assim que for aprovado, o plano é ativado sozinho, sem precisar sair da conta.',
       )
+      setAwaitingPayment(true)
       setTarget(null)
     } catch (err) {
       toast.error('Não foi possível abrir o checkout', errorMessage(err))
@@ -81,7 +110,7 @@ export function PlansPage() {
       )
     if (current.limits.siteGenerationsPerDay > 0 && p.limits.siteGenerationsPerDay === 0)
       list.push('O Gerador de prompts para sites deixará de estar disponível.')
-    if (current.limits.waveIA && !p.limits.waveIA) list.push('Você perderá o acesso à WaveIA.')
+    if (current.limits.waveIA && !p.limits.waveIA) list.push('Você perderá o acesso à LeadIA.')
     if (tokens.used > p.limits.tokens)
       list.push('Você já usou hoje mais tokens do que o novo plano permite por dia; o saldo volta amanhã.')
     return list
@@ -143,7 +172,7 @@ export function PlansPage() {
               </dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-fg-muted">WaveIA</dt>
+              <dt className="text-fg-muted">LeadIA</dt>
               <dd className="text-fg">{current.limits.waveIA ? 'Incluída' : 'Não incluída'}</dd>
             </div>
           </dl>

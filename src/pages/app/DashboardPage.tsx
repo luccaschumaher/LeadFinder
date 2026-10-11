@@ -180,7 +180,7 @@ export function DashboardPage() {
                   required: FEATURE_PLAN.siteGenerator,
                 },
                 {
-                  label: 'WaveIA',
+                  label: 'LeadIA',
                   icon: AudioWaveform,
                   to: ROUTES.waveIA,
                   locked: !can('waveIA'),

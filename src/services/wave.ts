@@ -9,16 +9,16 @@ import { sessionStore } from '@/stores/session'
 import type { ChatMessage, Conversation } from '@/types'
 
 /**
- * WaveIA — assistente de prospecção e vendas.
+ * LeadIA — assistente de prospecção e vendas.
  *
  * Conversas e mensagens ficam salvas no Supabase. As respostas vêm da edge function
- * lf-ai (Claude Haiku 4.5), que valida o plano Diamond e o limite diário. Enquanto
- * DEMO_AI estiver ligado, cada envio recebe um aviso explícito ("serviço não conectado"),
- * nunca uma resposta inventada. Avisos não são salvos.
+ * lf-ai, que valida o plano Diamond e o limite diário antes de chamar a IA e salva a
+ * resposta. Enquanto DEMO_AI estiver ligado, cada envio recebe um aviso explícito
+ * ("serviço não conectado"), nunca uma resposta inventada. Avisos não são salvos.
  */
 
 export const WAVE_NOT_CONNECTED =
-  'A WaveIA ainda não está conectada a um serviço de inteligência artificial. Sua mensagem foi salva nesta conversa e poderá ser respondida quando a integração for ativada.'
+  'A LeadIA ainda não está conectada a um serviço de inteligência artificial. Sua mensagem foi salva nesta conversa e poderá ser respondida quando a integração for ativada.'
 
 /** Pede a resposta à IA (edge function lf-ai), que lê a conversa do banco e salva a resposta. */
 async function requestCompletion(conversationId: string): Promise<ChatMessage> {
@@ -26,7 +26,8 @@ async function requestCompletion(conversationId: string): Promise<ChatMessage> {
     await delay(1100)
     throw new AppError('service_unavailable', WAVE_NOT_CONNECTED)
   }
-  const mascot = sessionStore.get().user?.preferences.mascot
+  const mascot = sessionStore.get().user?.preferences.mascot ?? 'robot'
+
   const result = await invokeFunction<{ message: Record<string, unknown>; waveMessagesToday: number }>('lf-ai', {
     action: 'wave_chat',
     conversationId,

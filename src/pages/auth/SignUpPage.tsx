@@ -6,6 +6,8 @@ import { AvatarPicker } from '@/components/mascots/pickers'
 import { Button } from '@/components/ui/Button'
 import { Checkbox, Field, Input, PasswordInput } from '@/components/ui/Field'
 import { ROUTES } from '@/config/routes'
+import { useCaptcha } from '@/hooks/useCaptcha'
+import { CAPTCHA_REQUIRED_MESSAGE } from '@/lib/captcha'
 import { DEFAULT_AVATAR } from '@/data/characters'
 import { cn } from '@/lib/cn'
 import { errorMessage } from '@/lib/errors'
@@ -38,6 +40,7 @@ export function SignUpPage() {
   const [errors, setErrors] = useState<Errors<Form>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'confirm'>('idle')
+  const captcha = useCaptcha()
 
   const update = (key: keyof typeof form, value: string) => {
     setForm((f) => ({ ...f, [key]: value }))
@@ -56,9 +59,10 @@ export function SignUpPage() {
     }
     setErrors(next)
     if (hasErrors(next)) return
+    if (!captcha.ready) return setFormError(CAPTCHA_REQUIRED_MESSAGE)
     setStatus('loading')
     try {
-      const result = await authService.signUp({ ...form, avatar })
+      const result = await authService.signUp({ ...form, avatar, captchaToken: captcha.token })
       if (result.needsConfirmation) {
         setStatus('confirm')
         return
@@ -69,6 +73,7 @@ export function SignUpPage() {
     } catch (err) {
       setFormError(errorMessage(err))
       setStatus('idle')
+      captcha.reset()
     }
   }
 
@@ -242,6 +247,7 @@ export function SignUpPage() {
           />
           {errors.terms && <p className="mt-1.5 text-[12px] text-red-400">{errors.terms}</p>}
         </div>
+        {captcha.widget}
         <Button type="submit" loading={status === 'loading'} className="mt-1 w-full">
           {status === 'loading' ? 'Criando conta…' : 'Criar conta gratuita'}
         </Button>

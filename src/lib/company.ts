@@ -21,5 +21,7 @@ export function openCompanyWebsite(company: Company) {
     )
     return
   }
+  // Só abre links http(s); qualquer outro protocolo (ex.: javascript:) é ignorado.
+  if (!/^https?:\/\//i.test(company.website)) return
   window.open(company.website, '_blank', 'noopener,noreferrer')
 }

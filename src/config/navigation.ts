@@ -82,7 +82,7 @@ export const APP_NAV: { title: string; items: AppNavItem[] }[] = [
       { label: 'Biblioteca de prompts', to: ROUTES.prompts, icon: LibraryBig, feature: 'promptLibrary' },
       { label: 'Financeiro', to: ROUTES.finance, icon: Wallet, feature: 'finance' },
       { label: 'Gerador de prompts', to: ROUTES.siteGenerator, icon: WandSparkles, feature: 'siteGenerator' },
-      { label: 'WaveIA', to: ROUTES.waveIA, icon: AudioWaveform, feature: 'waveIA' },
+      { label: 'LeadIA', to: ROUTES.waveIA, icon: AudioWaveform, feature: 'waveIA' },
     ],
   },
   {

@@ -23,6 +23,8 @@ import { Field, Input, PasswordInput, Switch } from '@/components/ui/Field'
 import { DEFAULT_AVATAR, DEFAULT_MASCOT } from '@/data/characters'
 import { SECTION_IDS } from '@/config/navigation'
 import { ROUTES } from '@/config/routes'
+import { useCaptcha } from '@/hooks/useCaptcha'
+import { CAPTCHA_REQUIRED_MESSAGE } from '@/lib/captcha'
 import { usePlan } from '@/hooks/usePlan'
 import { cn } from '@/lib/cn'
 import { errorMessage } from '@/lib/errors'
@@ -183,6 +185,7 @@ function SecuritySection() {
   const [form, setForm] = useState({ current: '', next: '', confirm: '' })
   const [errors, setErrors] = useState<Partial<typeof form>>({})
   const [saving, setSaving] = useState(false)
+  const captcha = useCaptcha()
 
   const save = async (e: FormEvent) => {
     e.preventDefault()
@@ -193,15 +196,17 @@ function SecuritySection() {
     }
     setErrors(next)
     if (next.current || next.next || next.confirm) return
+    if (!captcha.ready) return setErrors({ current: CAPTCHA_REQUIRED_MESSAGE })
     setSaving(true)
     try {
-      await authService.changePassword({ current: form.current, next: form.next })
+      await authService.changePassword({ current: form.current, next: form.next, captchaToken: captcha.token })
       setForm({ current: '', next: '', confirm: '' })
       toast.success('Senha alterada')
     } catch (err) {
       setErrors({ current: errorMessage(err) })
     } finally {
       setSaving(false)
+      captcha.reset()
     }
   }
 
@@ -239,6 +244,7 @@ function SecuritySection() {
           {field('next', 'Nova senha', 'new-password')}
           {field('confirm', 'Confirmar nova senha', 'new-password')}
           <p className="text-[12px] text-fg-subtle">Mínimo de 8 caracteres, com letras e números.</p>
+          {captcha.widget}
         </div>
       </Section>
     </form>
@@ -251,7 +257,7 @@ function AppearanceSection() {
     <Section title="Aparência" description="Ajuste a interface ao seu gosto.">
       <div className="space-y-6">
         <div>
-          <p className="text-sm font-medium text-fg">Personagem da WaveIA</p>
+          <p className="text-sm font-medium text-fg">Personagem da LeadIA</p>
           <p className="mt-0.5 text-[13px] text-fg-subtle">
             Escolha quem vai te acompanhar nas conversas com a assistente.
           </p>

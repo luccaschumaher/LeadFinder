@@ -53,12 +53,12 @@ export function WaveIAPage() {
   if (!can('waveIA')) {
     return (
       <>
-        <PageHeader title="WaveIA" description="Sua assistente de prospecção e vendas de sites." />
+        <PageHeader title="LeadIA" description="Sua assistente de prospecção e vendas de sites." />
         <LockedFeature
           feature="waveIA"
           icon={AudioWaveform}
           title="Uma assistente para vender mais sites"
-          description="A WaveIA vai apoiar sua prospecção do primeiro contato à proposta: analisa empresas, sugere abordagens e ajuda a responder objeções."
+          description="A LeadIA vai apoiar sua prospecção do primeiro contato à proposta: analisa empresas, sugere abordagens e ajuda a responder objeções."
           benefits={[...CAPABILITIES, 'Escolha seu parceiro: robô, dragão, alienígena ou cachorrinho']}
           previewStyle="clear"
           preview={
@@ -151,7 +151,7 @@ function WaveChat() {
   return (
     <>
       <PageHeader
-        title="WaveIA"
+        title="LeadIA"
         description="Converse sobre prospecção, análise de empresas, abordagens e propostas."
         actions={
           DEMO_AI ? (
@@ -216,7 +216,7 @@ function WaveChat() {
                 <button
                   type="button"
                   {...props}
-                  aria-label="Trocar personagem da WaveIA"
+                  aria-label="Trocar personagem da LeadIA"
                   title="Trocar personagem"
                   className="rounded-full transition-transform hover:scale-105"
                 >
@@ -233,7 +233,7 @@ function WaveChat() {
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-fg">{active?.title ?? 'Nova conversa'}</p>
               <p className="truncate text-[11px] text-fg-subtle">
-                {thinking ? 'Processando…' : 'WaveIA · assistente de vendas'}
+                {thinking ? 'Processando…' : 'LeadIA · assistente de vendas'}
               </p>
             </div>
             <div className="flex items-center gap-1 lg:hidden">
@@ -310,7 +310,7 @@ function WaveChat() {
                   ))}
                 </AnimatePresence>
                 {thinking && (
-                  <li className="flex items-center gap-3" aria-label="WaveIA está processando">
+                  <li className="flex items-center gap-3" aria-label="LeadIA está processando">
                     <WaveAvatar size="sm" state="thinking" />
                     <span className="flex gap-1 rounded-2xl rounded-tl-md border border-line bg-ink-850 px-4 py-3">
                       {[0, 1, 2].map((d) => (
@@ -345,7 +345,7 @@ function WaveChat() {
                 onKeyDown={onKeyDown}
                 rows={1}
                 maxLength={2000}
-                aria-label="Mensagem para a WaveIA"
+                aria-label="Mensagem para a LeadIA"
                 placeholder="Escreva sua mensagem…"
                 className="max-h-40 min-h-9 flex-1 resize-none bg-transparent py-2 text-sm text-fg outline-none placeholder:text-fg-subtle [field-sizing:content]"
               />
@@ -360,7 +360,7 @@ function WaveChat() {
             </div>
             {limitReached ? (
               <p className="mt-2 text-center text-[12px] text-amber-200/90">
-                Você usou as {waveMessages.total} mensagens de hoje. A WaveIA volta à meia-noite.
+                Você usou as {waveMessages.total} mensagens de hoje. A LeadIA volta à meia-noite.
               </p>
             ) : (
               <p className="mt-2 hidden text-center text-[11px] text-fg-subtle sm:block">

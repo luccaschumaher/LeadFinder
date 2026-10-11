@@ -57,6 +57,8 @@ function authMessage(message: string) {
     )
   if (/already registered|already been registered/i.test(message))
     return new AppError('email_taken', 'Já existe uma conta com este e-mail.')
+  if (/captcha/i.test(message))
+    return new AppError('invalid_credentials', 'A verificação de segurança falhou ou expirou. Confirme novamente.')
   if (/rate limit|too many/i.test(message))
     return new AppError('service_unavailable', 'Muitas tentativas em pouco tempo. Aguarde um minuto e tente novamente.')
   if (/password/i.test(message))
@@ -101,12 +103,16 @@ export const authService = {
   },
 
   /** Cadastro. Se o projeto exigir confirmação de e-mail, retorna `needsConfirmation`. */
-  async signUp(input: { name: string; email: string; password: string; avatar?: AvatarId }) {
+  async signUp(input: { name: string; email: string; password: string; avatar?: AvatarId; captchaToken?: string }) {
     setRememberSession(true)
     const { data, error } = await supabase.auth.signUp({
       email: input.email.trim().toLowerCase(),
       password: input.password,
-      options: { data: { name: input.name.trim(), avatar: input.avatar }, emailRedirectTo: `${origin()}/entrar` },
+      options: {
+        data: { name: input.name.trim(), avatar: input.avatar },
+        emailRedirectTo: `${origin()}/entrar`,
+        captchaToken: input.captchaToken,
+      },
     })
     if (error) throw authMessage(error.message)
     // O Supabase devolve um usuário sem identidades quando o e-mail já existe (para não expor contas)
@@ -117,11 +123,12 @@ export const authService = {
     return { needsConfirmation: false as const }
   },
 
-  async signIn(input: { email: string; password: string; remember: boolean }) {
+  async signIn(input: { email: string; password: string; remember: boolean; captchaToken?: string }) {
     setRememberSession(input.remember)
     const { data, error } = await supabase.auth.signInWithPassword({
       email: input.email.trim().toLowerCase(),
       password: input.password,
+      options: { captchaToken: input.captchaToken },
     })
     if (error || !data.user) throw authMessage(error?.message ?? '')
     await enterSession(data.user)
@@ -134,9 +141,10 @@ export const authService = {
   },
 
   /** Envia o e-mail com o link para criar uma nova senha. */
-  async requestPasswordReset(email: string) {
+  async requestPasswordReset(email: string, captchaToken?: string) {
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
       redirectTo: `${origin()}/redefinir-senha`,
+      captchaToken,
     })
     if (error) throw authMessage(error.message)
     return { sent: true }
@@ -156,10 +164,14 @@ export const authService = {
     return sessionStore.get().user!
   },
 
-  async changePassword(input: { current: string; next: string }) {
+  async changePassword(input: { current: string; next: string; captchaToken?: string }) {
     const user = sessionStore.get().user
     if (!user) throw new AppError('invalid_credentials', 'Sessão expirada. Entre novamente.')
-    const check = await supabase.auth.signInWithPassword({ email: user.email, password: input.current })
+    const check = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: input.current,
+      options: { captchaToken: input.captchaToken },
+    })
     if (check.error) throw new AppError('wrong_password', 'A senha atual está incorreta.')
     const { error } = await supabase.auth.updateUser({ password: input.next })
     if (error) throw authMessage(error.message)
@@ -183,6 +195,16 @@ export const authService = {
   /** Atualiza o plano em memória (após simulação ou confirmação do servidor). */
   setPlan(plan: PlanId) {
     patchUser((u) => ({ ...u, plan }))
+  },
+
+  /** Relê o plano no servidor (ativado pelo webhook da Cakto). Retorna o plano atual. */
+  async refreshPlan() {
+    const current = sessionStore.get().user
+    if (!current) return null
+    const row = must(await supabase.from('lf_profiles').select('plan').eq('id', current.id).single())
+    const plan = (row?.plan ?? current.plan) as PlanId
+    if (plan !== current.plan) patchUser((u) => ({ ...u, plan }))
+    return plan
   },
 
   /** Apaga os dados de prospecção da conta (mantém conta e plano). */

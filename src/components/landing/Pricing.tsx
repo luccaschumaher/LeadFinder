@@ -100,7 +100,7 @@ function PlanCard({ plan }: { plan: Plan }) {
                 <Check
                   className={cn(
                     'mt-0.5 size-4 shrink-0',
-                    isDiamond && f.label.includes('WaveIA') ? 'text-ice-accent' : 'text-electric-400',
+                    isDiamond && f.label.includes('LeadIA') ? 'text-ice-accent' : 'text-electric-400',
                   )}
                   strokeWidth={2}
                   aria-hidden

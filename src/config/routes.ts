@@ -20,7 +20,7 @@ export const ROUTES = {
   prompts: '/app/prompts',
   finance: '/app/financeiro',
   siteGenerator: '/app/gerador',
-  waveIA: '/app/waveia',
+  waveIA: '/app/leadia',
   plans: '/app/planos',
   settings: '/app/configuracoes',
 } as const

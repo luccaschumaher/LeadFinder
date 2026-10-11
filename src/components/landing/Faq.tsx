@@ -23,7 +23,7 @@ const QUESTIONS = [
     a: 'Não. O plano Free permite criar sua conta e fazer as primeiras buscas sem cobrança.',
   },
   {
-    q: 'O que é a WaveIA?',
+    q: 'O que é a LeadIA?',
     a: 'É a assistente de inteligência artificial do LeadFinder, pensada para apoiar estratégias de prospecção, análise de empresas, mensagens de contato e propostas. Ela faz parte do plano Diamond.',
   },
   {

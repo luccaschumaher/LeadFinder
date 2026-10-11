@@ -5,13 +5,15 @@ import { AppError } from '@/lib/errors'
 import { supabase } from '@/lib/supabase'
 import type { PlanId } from '@/types'
 import { logActivity } from './activity'
+import { sessionStore } from '@/stores/session'
 import { authService } from './auth'
 
 /**
  * Cobrança e troca de plano.
  *
- * Upgrade: o usuário é levado ao checkout da Cakto (`checkoutUrl` do plano). A ativação
- * do plano depois do pagamento vem do servidor, via webhook da Cakto (próxima etapa).
+ * Upgrade: o usuário é levado ao checkout da Cakto (`checkoutUrl` do plano) com o id da
+ * conta em `?callback=`. Depois do pagamento, a edge function lf-cakto-webhook ativa o
+ * plano no servidor; o app só relê o plano (authService.refreshPlan).
  * A troca simulada ("Testar sem pagar") usa a função `lf_simulate_plan`, que só
  * funciona enquanto `lf_app_settings.allow_plan_simulation` estiver ligado.
  */
@@ -20,7 +22,10 @@ export const billingService = {
   openCheckout(planId: PlanId) {
     const url = getPlan(planId).checkoutUrl
     if (!url) throw new AppError('service_unavailable', 'O checkout deste plano ainda não foi configurado.')
-    window.open(url, '_blank', 'noopener,noreferrer')
+    const checkout = new URL(url)
+    const userId = sessionStore.get().user?.id
+    if (userId) checkout.searchParams.set('callback', userId)
+    window.open(checkout.toString(), '_blank', 'noopener,noreferrer')
   },
 
   /** Troca de plano sem pagamento (testes). */

@@ -47,7 +47,7 @@ export function AvatarPicker({
   )
 }
 
-/** Escolha do personagem da WaveIA. */
+/** Escolha do personagem da LeadIA. */
 export function MascotPicker({
   value,
   onChange,
@@ -60,7 +60,7 @@ export function MascotPicker({
   compact?: boolean
 }) {
   return (
-    <div role="radiogroup" aria-label="Personagem da WaveIA" className={cn('grid grid-cols-4 gap-2', className)}>
+    <div role="radiogroup" aria-label="Personagem da LeadIA" className={cn('grid grid-cols-4 gap-2', className)}>
       {MASCOTS.map((m) => {
         const selected = value === m.id
         return (
