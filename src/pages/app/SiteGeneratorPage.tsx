@@ -18,6 +18,7 @@ import { PageHeader } from '@/components/app/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Badge, Card, CardHeader, ProgressBar, Skeleton } from '@/components/ui/display'
 import { Field, Input, Select, Textarea } from '@/components/ui/Field'
+import { Markdown } from '@/components/ui/Markdown'
 import { usePlan } from '@/hooks/usePlan'
 import { cn } from '@/lib/cn'
 import { errorMessage } from '@/lib/errors'
@@ -111,6 +112,7 @@ function Generator() {
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<SiteGeneration | null>(generations[0] ?? null)
   const [copied, setCopied] = useState(false)
+  const [rawView, setRawView] = useState(false)
   const [saving, setSaving] = useState(false)
   const limitReached = siteGenerations.used >= siteGenerations.total
 
@@ -231,9 +233,34 @@ function Generator() {
                   exit={{ opacity: 0 }}
                   className="flex min-h-0 flex-1 flex-col"
                 >
-                  <pre className="max-h-[520px] flex-1 overflow-auto rounded-xl border border-line bg-ink-950/70 p-4 font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap text-fg-muted">
-                    {result.output}
-                  </pre>
+                  <div className="mb-2 flex items-center gap-1 self-start rounded-lg border border-line bg-ink-950/50 p-0.5 text-[12px]">
+                    {[
+                      { raw: false, label: 'Formatado' },
+                      { raw: true, label: 'Texto para colar' },
+                    ].map((v) => (
+                      <button
+                        key={v.label}
+                        type="button"
+                        onClick={() => setRawView(v.raw)}
+                        aria-pressed={rawView === v.raw}
+                        className={cn(
+                          'rounded-md px-2.5 py-1 transition-colors',
+                          rawView === v.raw ? 'bg-ink-800 text-fg' : 'text-fg-subtle hover:text-fg',
+                        )}
+                      >
+                        {v.label}
+                      </button>
+                    ))}
+                  </div>
+                  {rawView ? (
+                    <pre className="max-h-[520px] flex-1 overflow-auto rounded-xl border border-line bg-ink-950/70 p-4 font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap text-fg-muted">
+                      {result.output}
+                    </pre>
+                  ) : (
+                    <div className="max-h-[520px] flex-1 overflow-auto rounded-xl border border-line bg-ink-950/70 p-5">
+                      <Markdown text={result.output} />
+                    </div>
+                  )}
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <Button size="sm" onClick={copy}>
                       {copied ? <Check /> : <Copy />}

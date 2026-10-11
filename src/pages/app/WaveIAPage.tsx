@@ -22,6 +22,7 @@ import { authService } from '@/services/auth'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/Dialog'
 import { Badge, Card } from '@/components/ui/display'
+import { Markdown } from '@/components/ui/Markdown'
 import { Menu } from '@/components/ui/Menu'
 import { DEMO_AI } from '@/config/app'
 import { usePlan } from '@/hooks/usePlan'
@@ -435,7 +436,8 @@ function MessageBubble({ message, onRetry }: { message: ChatMessage; onRetry?: (
         <div
           role={notice ? 'status' : undefined}
           className={cn(
-            'rounded-2xl rounded-tl-md border px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap',
+            'rounded-2xl rounded-tl-md border px-4 py-3 text-sm leading-relaxed',
+            notice && 'whitespace-pre-wrap',
             notice ? 'border-amber-400/25 bg-amber-400/[0.06] text-amber-100/90' : 'border-line bg-ink-850 text-fg',
           )}
         >
@@ -445,7 +447,7 @@ function MessageBubble({ message, onRetry }: { message: ChatMessage; onRetry?: (
               {DEMO_AI ? 'Serviço não conectado' : 'Aviso'}
             </span>
           )}
-          {message.content}
+          {notice ? message.content : <Markdown text={message.content} />}
         </div>
         <div className="mt-1.5 flex items-center gap-1">
           <Button variant="ghost" size="xs" onClick={copy} aria-label="Copiar resposta">
