@@ -48,6 +48,8 @@ export interface UserRow {
   ai_calls: number
   input_tokens: number
   output_tokens: number
+  /** Conta de teste ou de administrador (fora dos números do painel). */
+  internal: boolean
 }
 
 export interface PaymentEvent {
@@ -105,6 +107,7 @@ export async function fetchUsers(days: number) {
       'output_tokens',
     ])
       row[k] = Number(row[k] ?? 0)
+    row.internal = row.internal === true
     return row as unknown as UserRow
   }) as UserRow[]
 }

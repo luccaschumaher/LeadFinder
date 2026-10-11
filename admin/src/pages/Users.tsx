@@ -12,7 +12,9 @@ export function Users({ users, costs, days }: { users: UserRow[]; costs: CostSet
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const [sort, setSort] = useState<Sort>('recent')
+  const [showInternal, setShowInternal] = useState(false)
   const [now] = useState(() => Date.now())
+  const internalCount = users.filter((u) => u.internal).length
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -25,12 +27,13 @@ export function Users({ users, costs, days }: { users: UserRow[]; costs: CostSet
           !!u.expires_at &&
           new Date(u.expires_at).getTime() > now,
       }))
+      .filter((u) => showInternal || !u.internal)
       .filter((u) => !q || u.email.toLowerCase().includes(q) || u.name.toLowerCase().includes(q))
       .filter((u) => (filter === 'paying' ? u.paying : filter === 'free' ? u.plan === 'free' : true))
     if (sort === 'cost') list.sort((a, b) => b.cost - a.cost)
     if (sort === 'active') list.sort((a, b) => b.active_days - a.active_days)
     return list
-  }, [users, costs, query, filter, sort, now])
+  }, [users, costs, query, filter, sort, now, showInternal])
 
   return (
     <Card>
@@ -69,6 +72,17 @@ export function Users({ users, costs, days }: { users: UserRow[]; costs: CostSet
             { value: 'active', label: 'Mais ativos' },
           ]}
         />
+        {internalCount > 0 && (
+          <label className="flex items-center gap-2 text-[12px] text-fg-muted">
+            <input
+              type="checkbox"
+              checked={showInternal}
+              onChange={(e) => setShowInternal(e.target.checked)}
+              className="size-3.5 accent-[#2f6bff]"
+            />
+            Mostrar contas internas ({internalCount})
+          </label>
+        )}
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1100px] text-left text-[13px]">
@@ -92,7 +106,14 @@ export function Users({ users, costs, days }: { users: UserRow[]; costs: CostSet
             {rows.map((u) => (
               <tr key={u.id} className="hover:bg-white/[0.02]">
                 <Td>
-                  <p className="font-medium text-fg">{u.name}</p>
+                  <p className="flex items-center gap-1.5 font-medium text-fg">
+                    {u.name}
+                    {u.internal && (
+                      <span className="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-fg-muted">
+                        interna
+                      </span>
+                    )}
+                  </p>
                   <p className="text-[12px] text-fg-subtle">{u.email}</p>
                 </Td>
                 <Td>
