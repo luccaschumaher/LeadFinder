@@ -42,7 +42,8 @@ export function PlansPage() {
   const { plan: current, tokens, prompts, siteGenerations } = usePlan()
   const [target, setTarget] = useState<Plan | null>(null)
   const [loading, setLoading] = useState(false)
-  const [awaitingPayment, setAwaitingPayment] = useState(false)
+  // Voltando do checkout da Cakto (página de obrigado), já fica conferindo se o plano ativou.
+  const [awaitingPayment, setAwaitingPayment] = useState(() => /cakto/i.test(document.referrer))
 
   // Depois de abrir o checkout, confere o plano sempre que a pessoa volta para esta aba.
   useEffect(() => {

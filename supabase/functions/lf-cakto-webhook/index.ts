@@ -50,27 +50,57 @@ function safeEqual(a: string, b: string) {
   return diff === 0
 }
 
-async function hmacHex(key: string, message: string) {
+async function hmac(key: string, message: string) {
   const k = await crypto.subtle.importKey('raw', encoder.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, [
     'sign',
   ])
   const sig = new Uint8Array(await crypto.subtle.sign('HMAC', k, encoder.encode(message)))
-  return Array.from(sig, (b) => b.toString(16).padStart(2, '0')).join('')
+  return {
+    hex: Array.from(sig, (b) => b.toString(16).padStart(2, '0')).join(''),
+    b64: btoa(String.fromCharCode(...sig)),
+  }
 }
 
 /**
  * Aceita a assinatura do cabeçalho (recomendada pela Cakto) OU o campo "secret" do corpo.
- * Os dois exigem a mesma chave secreta; aceitar qualquer um evita perder um pagamento
- * se o formato da assinatura mudar.
+ * Todas as formas exigem a mesma chave secreta. Aceitamos as variações comuns de formato
+ * (com ou sem timestamp, hexadecimal ou base64, com ou sem prefixo "v1=") para nunca
+ * perder um pagamento por detalhe de formatação.
  */
 async function isAuthentic(req: Request, raw: string, body: Record<string, unknown>) {
+  const key = SECRET!.trim()
+  if (typeof body.secret === 'string' && safeEqual(body.secret.trim(), key)) return true
+
   const signature = req.headers.get('x-cakto-signature')
+  if (!signature) return false
   const timestamp = req.headers.get('x-cakto-timestamp')
-  if (signature && timestamp) {
-    const expected = `v1=${await hmacHex(SECRET!, `${timestamp}.${raw}`)}`
-    if (signature.split(',').some((s) => safeEqual(s.trim(), expected))) return true
+  const messages = timestamp ? [`${timestamp}.${raw}`, raw] : [raw]
+  const accepted = new Set<string>()
+  for (const message of messages) {
+    const { hex, b64 } = await hmac(key, message)
+    accepted.add(hex)
+    accepted.add(b64)
   }
-  return typeof body.secret === 'string' && safeEqual(body.secret, SECRET!)
+  const parts = signature
+    .split(',')
+    .map((s) => s.trim().replace(/^(v1|sha256)=/i, ''))
+    .filter(Boolean)
+  return parts.some((part) => [...accepted].some((exp) => safeEqual(part, exp)))
+}
+
+/** O que chegou, sem expor a chave: ajuda a diagnosticar recusas no painel do Supabase. */
+function describeAuth(req: Request, body: Record<string, unknown>) {
+  const signature = req.headers.get('x-cakto-signature')
+  return {
+    hasSignatureHeader: !!signature,
+    signaturePrefix: signature?.slice(0, 6) ?? null,
+    signatureLength: signature?.length ?? 0,
+    hasTimestamp: !!req.headers.get('x-cakto-timestamp'),
+    hasBodySecret: typeof body.secret === 'string',
+    bodySecretLength: typeof body.secret === 'string' ? body.secret.length : 0,
+    serverSecretLength: SECRET?.trim().length ?? 0,
+    headerNames: [...req.headers.keys()].filter((h) => h.startsWith('x-')),
+  }
 }
 
 function planFrom(data: Record<string, any>) {
@@ -97,7 +127,10 @@ Deno.serve(async (req) => {
   } catch {
     return json(400, { error: 'invalid_json' })
   }
-  if (!(await isAuthentic(req, raw, body))) return json(401, { error: 'invalid_signature' })
+  if (!(await isAuthentic(req, raw, body))) {
+    console.error('Aviso da Cakto recusado: assinatura não confere', describeAuth(req, body))
+    return json(401, { error: 'invalid_signature' })
+  }
 
   const event = String(body.event ?? '')
   const data = (body.data ?? {}) as Record<string, any>
