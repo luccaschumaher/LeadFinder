@@ -58,13 +58,17 @@ async function hmacHex(key: string, message: string) {
   return Array.from(sig, (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-/** Assinatura no cabeçalho (recomendado pela Cakto) ou, na falta dela, o campo "secret" do corpo. */
+/**
+ * Aceita a assinatura do cabeçalho (recomendada pela Cakto) OU o campo "secret" do corpo.
+ * Os dois exigem a mesma chave secreta; aceitar qualquer um evita perder um pagamento
+ * se o formato da assinatura mudar.
+ */
 async function isAuthentic(req: Request, raw: string, body: Record<string, unknown>) {
   const signature = req.headers.get('x-cakto-signature')
   const timestamp = req.headers.get('x-cakto-timestamp')
   if (signature && timestamp) {
     const expected = `v1=${await hmacHex(SECRET!, `${timestamp}.${raw}`)}`
-    return signature.split(',').some((s) => safeEqual(s.trim(), expected))
+    if (signature.split(',').some((s) => safeEqual(s.trim(), expected))) return true
   }
   return typeof body.secret === 'string' && safeEqual(body.secret, SECRET!)
 }
@@ -102,16 +106,35 @@ Deno.serve(async (req) => {
   if (!kind) return json(200, { ok: true, ignored: event })
 
   const plan = planFrom(data)
-  const email = data.customer?.email
-  if (!plan || !email) {
-    console.error('Evento sem plano ou e-mail reconhecível', { event, id: data.id, offer: data.offer?.id })
-    return json(200, { ok: false, ignored: 'unknown_offer' })
-  }
-
+  const email = typeof data.customer?.email === 'string' ? data.customer.email : null
   const callback = typeof data.callback === 'string' && UUID.test(data.callback) ? data.callback : null
   const eventId = `${event}:${data.id ?? data.subscription?.id ?? crypto.randomUUID()}`
-
   const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } })
+
+  /** Guarda o aviso para reprocessar depois (a Cakto não reenvia quando há erro). */
+  async function keepForLater(reason: string) {
+    console.error('Aviso da Cakto guardado para reprocessar', { eventId, reason })
+    const { error } = await admin.from('lf_billing_failures').upsert(
+      {
+        event_id: eventId,
+        event,
+        kind,
+        plan,
+        email,
+        user_id: callback,
+        reason,
+        offer: data.offer?.id ?? null,
+        product: data.product?.name ?? null,
+      },
+      { onConflict: 'event_id' },
+    )
+    // Se nem guardar foi possível, responde erro para aparecer como falha no painel da Cakto.
+    return error ? json(500, { error: 'processing_failed' }) : json(200, { ok: false, queued: true })
+  }
+
+  if (!plan) return keepForLater('plano não reconhecido')
+  if (!email) return keepForLater('aviso sem e-mail do cliente')
+
   const { data: result, error } = await admin.rpc('lf_billing_event', {
     p_event_id: eventId,
     p_event: event,
@@ -120,9 +143,6 @@ Deno.serve(async (req) => {
     p_email: email,
     p_user: callback,
   })
-  if (error) {
-    console.error('Falha ao processar evento da Cakto', { eventId, error: error.message })
-    return json(500, { error: 'processing_failed' })
-  }
+  if (error) return keepForLater(error.message)
   return json(200, { ok: true, ...result })
 })

@@ -320,6 +320,18 @@ export function PlansPage() {
                   ? `${target.priceLabel} · ${target.limits.tokens} tokens por dia e todos os recursos do plano ${target.name}. O pagamento é feito com segurança pela Cakto.`
                   : `Seus limites passarão a ser os do plano ${target.name}.`}
               </span>
+              {isUpgrade && current.checkoutUrl && (
+                <span className="block text-amber-200/90">
+                  {`Depois de assinar, cancele a assinatura do plano ${current.name} pelo link que a Cakto enviou no seu e-mail de compra, para não pagar os dois planos.`}
+                </span>
+              )}
+              {!isUpgrade && !PLAN_SIMULATION && (
+                <span className="block text-fg-subtle">
+                  {target.checkoutUrl
+                    ? `Para mudar, assine o plano ${target.name} e depois cancele a assinatura do plano ${current.name} pelo link que a Cakto enviou no seu e-mail de compra.`
+                    : `Para voltar ao Free, cancele sua assinatura pelo link que a Cakto enviou no seu e-mail de compra. Você continua com o plano ${current.name} até o fim do período já pago.`}
+                </span>
+              )}
               {!isUpgrade &&
                 downgradeWarnings(target).map((w) => (
                   <span key={w} className="block text-amber-200/90">
@@ -346,12 +358,12 @@ export function PlansPage() {
                 Testar sem pagar
               </Button>
             )}
-            {isUpgrade ? (
+            {isUpgrade || (!PLAN_SIMULATION && target?.checkoutUrl) ? (
               <Button size="sm" onClick={goToCheckout} disabled={loading || !target?.checkoutUrl} data-autofocus>
                 <CreditCard />
                 Ir para o pagamento
               </Button>
-            ) : (
+            ) : !PLAN_SIMULATION ? null : (
               <Button
                 variant={target && downgradeWarnings(target).length > 0 ? 'danger' : 'primary'}
                 size="sm"
