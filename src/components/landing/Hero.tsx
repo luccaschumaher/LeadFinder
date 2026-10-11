@@ -30,7 +30,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease }}
-            className="inline-flex items-center gap-2 rounded-full border border-line bg-white/[0.03] py-1 pr-3 pl-1.5 text-[13px] text-fg-muted"
+            className="inline-flex items-center gap-2 rounded-full border border-line bg-overlay/[0.03] py-1 pr-3 pl-1.5 text-[13px] text-fg-muted"
           >
             <span className="relative flex size-5 items-center justify-center">
               <span className="animate-pulse-ring absolute inset-0 rounded-full bg-electric-500/40" />

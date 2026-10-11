@@ -104,7 +104,7 @@ export function OnboardingPage() {
                 <span
                   className={cn(
                     'h-1 rounded-full transition-colors duration-300',
-                    i <= step ? 'bg-electric-400' : 'bg-white/10',
+                    i <= step ? 'bg-electric-400' : 'bg-overlay/10',
                   )}
                 />
                 <span
@@ -165,7 +165,7 @@ export function OnboardingPage() {
                             'flex items-start gap-3 rounded-xl border p-4 text-left transition-[border-color,background-color]',
                             selected
                               ? 'border-electric-400/60 bg-electric-500/[0.08]'
-                              : 'border-line-strong bg-ink-900/60 hover:border-white/20',
+                              : 'border-line-strong bg-ink-900/60 hover:border-overlay/20',
                           )}
                         >
                           <Icon
@@ -199,7 +199,7 @@ export function OnboardingPage() {
                             'inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-[13px] transition-colors',
                             selected
                               ? 'border-electric-400/60 bg-electric-500/10 text-fg'
-                              : 'border-line-strong text-fg-muted hover:border-white/20 hover:text-fg',
+                              : 'border-line-strong text-fg-muted hover:border-overlay/20 hover:text-fg',
                           )}
                         >
                           {selected ? (

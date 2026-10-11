@@ -42,7 +42,7 @@ export function CardHeader({
 type BadgeTone = 'neutral' | 'blue' | 'cyan' | 'amber' | 'green' | 'red' | 'ice'
 
 const badgeTones: Record<BadgeTone, string> = {
-  neutral: 'bg-white/[0.05] text-fg-muted ring-line-strong',
+  neutral: 'bg-overlay/[0.05] text-fg-muted ring-line-strong',
   blue: 'bg-electric-500/12 text-electric-300 ring-electric-500/25',
   cyan: 'bg-cyan-accent/10 text-cyan-accent ring-cyan-accent/25',
   amber: 'bg-amber-400/10 text-amber-300 ring-amber-400/25',
@@ -79,7 +79,7 @@ export function Badge({
 /* ---------- Skeleton ---------- */
 
 export function Skeleton({ className, style }: { className?: string; style?: CSSProperties }) {
-  return <div aria-hidden style={style} className={cn('animate-pulse rounded-md bg-white/[0.06]', className)} />
+  return <div aria-hidden style={style} className={cn('animate-pulse rounded-md bg-overlay/[0.06]', className)} />
 }
 
 /* ---------- Empty state ---------- */
@@ -134,7 +134,7 @@ export function ProgressBar({
       aria-valuemin={0}
       aria-valuemax={max}
       aria-valuenow={value}
-      className={cn('h-1.5 overflow-hidden rounded-full bg-white/[0.07]', className)}
+      className={cn('h-1.5 overflow-hidden rounded-full bg-overlay/[0.07]', className)}
     >
       <div
         className={cn(
@@ -183,7 +183,7 @@ export function Segmented<T extends string>({
           className={cn(
             'inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[13px] whitespace-nowrap transition-colors [&_svg]:size-3.5',
             value === o.value
-              ? 'bg-white/[0.08] text-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.05)]'
+              ? 'bg-overlay/[0.08] text-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.05)]'
               : 'text-fg-subtle hover:text-fg',
           )}
         >

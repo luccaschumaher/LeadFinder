@@ -31,6 +31,8 @@ export interface OnboardingState {
 export interface Preferences {
   /** Personagem da LeadIA. */
   mascot?: MascotId
+  /** Tema da área logada. */
+  theme?: 'dark' | 'light'
   notifications: {
     weeklySummary: boolean
     productUpdates: boolean

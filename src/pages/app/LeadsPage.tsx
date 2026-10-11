@@ -257,7 +257,7 @@ export function LeadsPage() {
               <Card className="mt-4 hidden overflow-hidden md:block">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[640px] text-left text-[13px]">
-                    <thead className="border-b border-line bg-white/[0.015] text-[11px] tracking-wide text-fg-subtle uppercase">
+                    <thead className="border-b border-line bg-overlay/[0.015] text-[11px] tracking-wide text-fg-subtle uppercase">
                       <tr>
                         <th scope="col" className="w-10 py-3 pr-2 pl-4">
                           <Checkbox aria-label="Selecionar todos" checked={allSelected} onChange={toggleAll} />
@@ -286,7 +286,7 @@ export function LeadsPage() {
                           className={
                             selected.has(r.lead.id)
                               ? 'bg-electric-500/[0.04]'
-                              : 'transition-colors hover:bg-white/[0.02]'
+                              : 'transition-colors hover:bg-overlay/[0.02]'
                           }
                         >
                           <td className="py-3 pr-2 pl-4">

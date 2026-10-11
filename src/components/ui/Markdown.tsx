@@ -149,7 +149,7 @@ function ScriptCard({ lines }: { lines: string[] }) {
         onClick={copy}
         aria-label={copied ? 'Copiado' : 'Copiar texto'}
         title={copied ? 'Copiado' : 'Copiar texto'}
-        className="absolute top-2.5 right-2.5 flex size-7 items-center justify-center rounded-lg text-fg-subtle transition-colors hover:bg-white/5 hover:text-fg"
+        className="absolute top-2.5 right-2.5 flex size-7 items-center justify-center rounded-lg text-fg-subtle transition-colors hover:bg-overlay/5 hover:text-fg"
       >
         {copied ? <Check className="size-3.5 text-emerald-300" /> : <Copy className="size-3.5" />}
       </button>

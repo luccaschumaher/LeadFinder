@@ -76,7 +76,7 @@ export function MascotPicker({
               'flex flex-col items-center gap-1.5 rounded-xl border p-2 transition-colors',
               selected
                 ? 'border-electric-400/60 bg-electric-500/10'
-                : 'border-line hover:border-line-strong hover:bg-white/[0.03]',
+                : 'border-line hover:border-line-strong hover:bg-overlay/[0.03]',
             )}
           >
             <ProfileAvatar id={m.id} size={compact ? 34 : 42} />

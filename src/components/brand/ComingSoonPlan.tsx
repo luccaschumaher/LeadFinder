@@ -19,7 +19,7 @@ export function ComingSoonPlan({ className }: { className?: string }) {
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-fg">
           Novo plano
-          <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-fg-muted ring-1 ring-line-strong">
+          <span className="rounded-full bg-overlay/[0.06] px-2 py-0.5 text-[11px] font-medium text-fg-muted ring-1 ring-line-strong">
             Em breve
           </span>
         </p>

@@ -98,7 +98,7 @@ export function Navbar() {
             aria-expanded={open}
             aria-controls="mobile-menu"
             aria-label={open ? 'Fechar menu' : 'Abrir menu'}
-            className="-mr-2 inline-flex size-10 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-white/5 hover:text-fg md:hidden"
+            className="-mr-2 inline-flex size-10 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-overlay/5 hover:text-fg md:hidden"
           >
             {open ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>

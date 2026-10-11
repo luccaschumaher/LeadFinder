@@ -26,7 +26,7 @@ export function WaveIAPreview() {
 
       {/* Conversa */}
       <div className="flex flex-col gap-2">
-        <div className="ml-auto max-w-[85%] rounded-lg rounded-br-sm bg-white/[0.06] px-3 py-2 text-[12px] text-fg">
+        <div className="ml-auto max-w-[85%] rounded-lg rounded-br-sm bg-overlay/[0.06] px-3 py-2 text-[12px] text-fg">
           Como apresento o valor de um site para uma padaria de bairro?
         </div>
         <div className="max-w-[92%] rounded-lg rounded-bl-sm border border-(--accent)/20 bg-(--accent)/[0.06] px-3 py-2 text-[12px] leading-relaxed text-fg-muted">

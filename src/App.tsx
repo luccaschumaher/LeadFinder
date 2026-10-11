@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/Toast'
 import { AppRoutes } from '@/routes/AppRoutes'
 import { ErrorBoundary } from '@/routes/ErrorBoundary'
 import { ScrollManager } from '@/routes/ScrollManager'
+import { ThemeSync } from '@/routes/ThemeSync'
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
       <BrowserRouter>
         <ErrorBoundary>
           <ScrollManager />
+          <ThemeSync />
           <AppRoutes />
           <Toaster />
         </ErrorBoundary>

@@ -12,8 +12,9 @@ const base =
 const variants: Record<Variant, string> = {
   primary:
     'bg-electric-500 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_0_0_1px_rgb(47_107_255/0.6),0_8px_24px_-8px_rgb(47_107_255/0.7)] hover:bg-electric-400 hover:shadow-[inset_0_1px_0_rgb(255_255_255/0.3),0_0_0_1px_rgb(91_145_255/0.8),0_10px_32px_-8px_rgb(47_107_255/0.9)]',
-  secondary: 'bg-white/[0.04] text-fg ring-1 ring-inset ring-line-strong hover:bg-white/[0.08] hover:ring-white/20',
-  ghost: 'text-fg-muted hover:bg-white/[0.06] hover:text-fg',
+  secondary:
+    'bg-overlay/[0.04] text-fg ring-1 ring-inset ring-line-strong hover:bg-overlay/[0.08] hover:ring-overlay/20',
+  ghost: 'text-fg-muted hover:bg-overlay/[0.06] hover:text-fg',
   danger: 'bg-red-500/90 text-white ring-1 ring-inset ring-red-400/40 hover:bg-red-500',
 }
 

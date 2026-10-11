@@ -129,7 +129,7 @@ export function ProfileAvatar({
         height: size,
         background: `radial-gradient(circle at 35% 25%, ${info.bg[0]}, ${info.bg[1]})`,
       }}
-      className={cn('relative block shrink-0 overflow-hidden rounded-full ring-1 ring-white/10', className)}
+      className={cn('relative block shrink-0 overflow-hidden rounded-full ring-1 ring-overlay/10', className)}
     >
       <svg viewBox="16 8 88 88" width={size} height={size} aria-hidden className="absolute inset-0 translate-y-[6%]">
         <Character uid={uid} look={CENTER} mood={mood} animated={animated} />

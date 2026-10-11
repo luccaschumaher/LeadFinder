@@ -14,7 +14,7 @@ const control =
   'w-full rounded-lg border bg-ink-950/60 text-sm text-fg placeholder:text-fg-subtle transition-[border-color,box-shadow,background-color] duration-150 outline-none focus:border-electric-400/70 focus:bg-ink-950 focus:ring-3 focus:ring-electric-500/15 disabled:cursor-not-allowed disabled:opacity-50'
 
 const controlTone = (error?: string) =>
-  error ? 'border-red-500/60 focus:border-red-400 focus:ring-red-500/15' : 'border-line-strong hover:border-white/20'
+  error ? 'border-red-500/60 focus:border-red-400 focus:ring-red-500/15' : 'border-line-strong hover:border-overlay/20'
 
 interface FieldProps {
   label?: ReactNode
@@ -191,7 +191,7 @@ export function Switch({ checked, onChange, label, description, disabled }: Swit
         onClick={() => onChange(!checked)}
         className={cn(
           'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50',
-          checked ? 'bg-electric-500' : 'bg-white/12',
+          checked ? 'bg-electric-500' : 'bg-overlay/12',
         )}
       >
         <span

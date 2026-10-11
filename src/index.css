@@ -24,6 +24,9 @@
   --color-line: rgb(255 255 255 / 0.07);
   --color-line-strong: rgb(255 255 255 / 0.12);
 
+  /* Camadas translúcidas (hover, fundos sutis): branco no escuro, grafite no claro */
+  --color-overlay: #ffffff;
+
   /* Azul elétrico — cor principal */
   --color-electric-200: #bcd3ff;
   --color-electric-300: #8db4ff;
@@ -198,6 +201,49 @@
   }
 }
 
+/*
+ * Tema claro (Configurações › Aparência). Troca as cores-base; os componentes usam só
+ * esses tokens, então o site inteiro acompanha.
+ */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --color-ink-950: #f4f6fb;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #f7f8fc;
+  --color-ink-800: #eef1f7;
+  --color-ink-750: #e6eaf2;
+  --color-ink-700: #dce1ea;
+  --color-ink-600: #c7cedb;
+
+  --color-fg: #0d1017;
+  --color-fg-muted: #475066;
+  --color-fg-subtle: #737c91;
+
+  --color-line: rgb(15 23 42 / 0.09);
+  --color-line-strong: rgb(15 23 42 / 0.16);
+  --color-overlay: #0b1020;
+
+  /* Azuis claros viram tons mais escuros para ter contraste no branco */
+  --color-electric-200: #1a44b8;
+  --color-electric-300: #1e54e6;
+
+  --color-ice-accent: #1f7fd1;
+  --color-cyan-accent: #0e8fa8;
+
+  /* Textos de status legíveis no fundo claro */
+  --color-red-100: #991b1b;
+  --color-red-200: #b91c1c;
+  --color-red-300: #c62828;
+  --color-red-400: #dc2626;
+  --color-amber-100: #78350f;
+  --color-amber-200: #92400e;
+  --color-amber-300: #b45309;
+  --color-emerald-100: #065f46;
+  --color-emerald-300: #047857;
+  --color-emerald-400: #059669;
+}
+
 @layer base {
   :root {
     color-scheme: dark;
@@ -236,10 +282,14 @@
 
   /* Grade técnica de fundo, desvanecida nas bordas */
   .bg-grid {
+    --grid-line: rgb(255 255 255 / 0.035);
     background-image:
-      linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
     background-size: 56px 56px;
+  }
+  :root[data-theme='light'] .bg-grid {
+    --grid-line: rgb(15 23 42 / 0.05);
   }
 
   /* Superfície de card com borda sutil e profundidade */
@@ -251,11 +301,23 @@
       0 24px 48px -24px rgb(0 0 0 / 0.6);
   }
 
+  :root[data-theme='light'] .surface {
+    background: #ffffff;
+    box-shadow:
+      0 1px 2px rgb(15 23 42 / 0.04),
+      0 18px 40px -24px rgb(15 23 42 / 0.18);
+  }
+
   .text-gradient {
-    background: linear-gradient(180deg, #ffffff 20%, #aab3c5 100%);
+    background: linear-gradient(180deg, var(--gradient-from, #ffffff) 20%, var(--gradient-to, #aab3c5) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+
+  :root[data-theme='light'] .text-gradient {
+    --gradient-from: #0d1017;
+    --gradient-to: #3d4658;
   }
 
   .text-electric-gradient {

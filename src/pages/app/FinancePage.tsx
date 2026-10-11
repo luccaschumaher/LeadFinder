@@ -240,7 +240,7 @@ function Finance() {
         ) : (
           groups.map((g) => (
             <Card key={g.start.getTime()} className="overflow-hidden">
-              <div className="flex items-center justify-between gap-3 border-b border-line bg-white/[0.015] px-5 py-3">
+              <div className="flex items-center justify-between gap-3 border-b border-line bg-overlay/[0.015] px-5 py-3">
                 <div>
                   <p className="text-sm font-medium text-fg">
                     Semana de {formatShortDate(g.start)} a {formatShortDate(g.end)}
@@ -370,7 +370,7 @@ function WeeklyChart({ sales }: { sales: Sale[] }) {
                 title={`${formatBRL(w.paid)} pago · ${formatBRL(w.pending)} a receber`}
               >
                 {total === 0 ? (
-                  <div className="h-full bg-white/[0.06]" />
+                  <div className="h-full bg-overlay/[0.06]" />
                 ) : (
                   <>
                     <div

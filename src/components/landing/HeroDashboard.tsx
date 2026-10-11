@@ -100,7 +100,7 @@ export function HeroDashboard() {
             {/* Indicadores */}
             <motion.div variants={item} className="mt-4 grid grid-cols-3 gap-2">
               {STATS.map((s) => (
-                <div key={s.label} className="rounded-lg border border-line bg-white/[0.02] px-3 py-2.5">
+                <div key={s.label} className="rounded-lg border border-line bg-overlay/[0.02] px-3 py-2.5">
                   <div className="text-[11px] text-fg-subtle">{s.label}</div>
                   <div
                     className={cn(
@@ -210,7 +210,7 @@ export function HeroDashboard() {
                   <span>{row.label}</span>
                   <span className="font-mono tabular-nums">{row.value}</span>
                 </div>
-                <div className="mt-1 h-1 rounded-full bg-white/5">
+                <div className="mt-1 h-1 rounded-full bg-overlay/5">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-electric-600 to-electric-400"
                     style={{ width: row.width }}

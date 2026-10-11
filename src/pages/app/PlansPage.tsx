@@ -258,7 +258,7 @@ export function PlansPage() {
             <caption className="px-5 pt-5 pb-3 text-left text-sm font-semibold text-fg">
               Comparação dos recursos
             </caption>
-            <thead className="border-y border-line bg-white/[0.015] text-[11px] tracking-wide text-fg-subtle uppercase">
+            <thead className="border-y border-line bg-overlay/[0.015] text-[11px] tracking-wide text-fg-subtle uppercase">
               <tr>
                 <th scope="col" className="px-5 py-3 font-medium">
                   Recurso

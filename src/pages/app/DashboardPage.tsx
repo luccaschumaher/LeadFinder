@@ -197,7 +197,7 @@ export function DashboardPage() {
                 <li key={s.to}>
                   <Link
                     to={s.to}
-                    className="group flex items-center gap-3 rounded-lg px-2.5 py-2.5 transition-colors hover:bg-white/[0.04]"
+                    className="group flex items-center gap-3 rounded-lg px-2.5 py-2.5 transition-colors hover:bg-overlay/[0.04]"
                   >
                     <span className="flex size-8 items-center justify-center rounded-lg border border-line bg-ink-850 text-fg-muted group-hover:text-electric-300">
                       <s.icon className="size-4" strokeWidth={1.75} />
@@ -375,7 +375,7 @@ function SearchesChart() {
             <div
               className={cn(
                 'w-full max-w-7 rounded-t-md transition-[height] duration-700',
-                d.count ? 'bg-gradient-to-t from-electric-600 to-electric-400' : 'bg-white/[0.06]',
+                d.count ? 'bg-gradient-to-t from-electric-600 to-electric-400' : 'bg-overlay/[0.06]',
               )}
               style={{ height: d.count ? `${(d.count / max) * 100}%` : 4 }}
             />
@@ -411,7 +411,7 @@ function LeadsByStatus() {
           {counts.map((c) => (
             <li key={c.id} className="contents">
               <LeadStatusBadge status={c.id} />
-              <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="h-1.5 overflow-hidden rounded-full bg-overlay/[0.06]">
                 <div
                   className="h-full rounded-full bg-electric-400/80 transition-[width] duration-700"
                   style={{ width: `${(c.count / max) * 100}%` }}
@@ -458,7 +458,7 @@ function RecentSearches() {
             <li key={h.id}>
               <Link
                 to={`${ROUTES.search}?segmento=${encodeURIComponent(h.segment)}&regiao=${encodeURIComponent(h.region)}`}
-                className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-white/[0.02]"
+                className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-overlay/[0.02]"
               >
                 <ScanSearch className="size-4 shrink-0 text-fg-subtle" />
                 <div className="min-w-0 flex-1">

@@ -28,7 +28,7 @@ export function SearchPreview() {
           {RESULTS.map((r) => (
             <li
               key={r.name}
-              className="flex items-center gap-2.5 rounded-lg border border-line bg-white/[0.02] px-2.5 py-2 transition-colors group-hover:border-line-strong"
+              className="flex items-center gap-2.5 rounded-lg border border-line bg-overlay/[0.02] px-2.5 py-2 transition-colors group-hover:border-line-strong"
             >
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[12px] font-medium text-fg">{r.name}</div>
@@ -88,7 +88,7 @@ function Chip({ icon: Icon, active, children }: { icon?: typeof MapPin; active?:
       className={
         active
           ? 'inline-flex items-center gap-1 rounded-md border border-(--accent)/35 bg-(--accent)/10 px-2 py-1 text-[11px] text-(--accent)'
-          : 'inline-flex items-center gap-1 rounded-md border border-line bg-white/[0.03] px-2 py-1 text-[11px] text-fg-muted'
+          : 'inline-flex items-center gap-1 rounded-md border border-line bg-overlay/[0.03] px-2 py-1 text-[11px] text-fg-muted'
       }
     >
       {Icon && <Icon className="size-3" />}

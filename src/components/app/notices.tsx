@@ -52,7 +52,7 @@ export function LockedFeature({
         <div aria-hidden className="absolute -top-24 right-0 h-64 w-96 rounded-full bg-electric-500/10 blur-[90px]" />
         <div className="relative grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:items-center">
           <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-white/[0.03] px-2.5 py-1 text-[12px] text-fg-muted">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-overlay/[0.03] px-2.5 py-1 text-[12px] text-fg-muted">
               <PlanBadge plan={plan.id} size={16} />
               Disponível a partir do plano {plan.name}
             </span>

@@ -507,7 +507,7 @@ function LoadingState({ step }: { step: number }) {
             {Math.round(((step + 1) / LOADING_STEPS.length) * 100)}%
           </span>
         </div>
-        <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+        <div className="mt-3 h-1 overflow-hidden rounded-full bg-overlay/[0.06]">
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-electric-600 to-electric-400"
             initial={{ width: '8%' }}
@@ -619,7 +619,7 @@ function CompanyTable({ companies }: { companies: Company[] }) {
     <Card className="mt-4 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[820px] text-left text-[13px]">
-          <thead className="border-b border-line bg-white/[0.015] text-[11px] tracking-wide text-fg-subtle uppercase">
+          <thead className="border-b border-line bg-overlay/[0.015] text-[11px] tracking-wide text-fg-subtle uppercase">
             <tr>
               <th scope="col" className="px-4 py-3 font-medium">
                 Empresa
@@ -643,7 +643,7 @@ function CompanyTable({ companies }: { companies: Company[] }) {
           </thead>
           <tbody className="divide-y divide-line">
             {companies.map((c) => (
-              <tr key={c.id} className="transition-colors hover:bg-white/[0.02]">
+              <tr key={c.id} className="transition-colors hover:bg-overlay/[0.02]">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <CompanyAvatar name={c.name} className="size-8" />
@@ -727,7 +727,7 @@ function QuantityInput({
         onClick={() => onChange(value - 1)}
         disabled={disabled || value <= 1}
         aria-label="Diminuir quantidade"
-        className="flex w-9 items-center justify-center text-fg-muted transition-colors hover:bg-white/5 hover:text-fg disabled:opacity-30"
+        className="flex w-9 items-center justify-center text-fg-muted transition-colors hover:bg-overlay/5 hover:text-fg disabled:opacity-30"
       >
         <Minus className="size-3.5" />
       </button>
@@ -748,7 +748,7 @@ function QuantityInput({
         onClick={() => onChange(value + 1)}
         disabled={disabled || value >= max}
         aria-label="Aumentar quantidade"
-        className="flex w-9 items-center justify-center text-fg-muted transition-colors hover:bg-white/5 hover:text-fg disabled:opacity-30"
+        className="flex w-9 items-center justify-center text-fg-muted transition-colors hover:bg-overlay/5 hover:text-fg disabled:opacity-30"
       >
         <Plus className="size-3.5" />
       </button>

@@ -102,7 +102,7 @@ export function Dialog({ open, onClose, title, description, children, footer, si
                 onClick={onClose}
                 disabled={locked}
                 aria-label="Fechar"
-                className="-mt-1 -mr-2 rounded-lg p-1.5 text-fg-subtle transition-colors hover:bg-white/5 hover:text-fg disabled:opacity-40"
+                className="-mt-1 -mr-2 rounded-lg p-1.5 text-fg-subtle transition-colors hover:bg-overlay/5 hover:text-fg disabled:opacity-40"
               >
                 <X className="size-4" />
               </button>

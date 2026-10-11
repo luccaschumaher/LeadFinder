@@ -194,7 +194,9 @@ function WaveChat() {
                   onClick={() => setActiveId(c.id)}
                   className={cn(
                     'w-full rounded-lg px-2.5 py-2 pr-8 text-left transition-colors',
-                    c.id === activeId ? 'bg-white/[0.07] text-fg' : 'text-fg-muted hover:bg-white/[0.04] hover:text-fg',
+                    c.id === activeId
+                      ? 'bg-overlay/[0.07] text-fg'
+                      : 'text-fg-muted hover:bg-overlay/[0.04] hover:text-fg',
                   )}
                 >
                   <span className="block truncate text-[13px]">{c.title}</span>
@@ -278,7 +280,10 @@ function WaveChat() {
                 {[70, 45, 85].map((w, i) => (
                   <div
                     key={i}
-                    className={cn('h-14 animate-pulse rounded-2xl bg-white/[0.05]', i % 2 ? 'self-end' : 'self-start')}
+                    className={cn(
+                      'h-14 animate-pulse rounded-2xl bg-overlay/[0.05]',
+                      i % 2 ? 'self-end' : 'self-start',
+                    )}
                     style={{ width: `${w}%` }}
                   />
                 ))}

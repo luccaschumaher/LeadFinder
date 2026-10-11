@@ -61,7 +61,7 @@ export function AppLayout() {
           onClick={() => setDrawerOpen(true)}
           aria-label="Abrir menu"
           aria-expanded={drawerOpen}
-          className="-ml-2 flex size-9 items-center justify-center rounded-lg text-fg-muted hover:bg-white/5 hover:text-fg"
+          className="-ml-2 flex size-9 items-center justify-center rounded-lg text-fg-muted hover:bg-overlay/5 hover:text-fg"
         >
           <MenuIcon className="size-5" />
         </button>
@@ -127,7 +127,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
             type="button"
             onClick={onClose}
             aria-label="Fechar menu"
-            className="-mr-2 ml-1 rounded-lg p-1.5 text-fg-subtle hover:bg-white/5 hover:text-fg"
+            className="-mr-2 ml-1 rounded-lg p-1.5 text-fg-subtle hover:bg-overlay/5 hover:text-fg"
           >
             <X className="size-4" />
           </button>
@@ -152,7 +152,9 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                       className={({ isActive }) =>
                         cn(
                           'group relative flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13.5px] transition-colors',
-                          isActive ? 'bg-white/[0.07] text-fg' : 'text-fg-muted hover:bg-white/[0.04] hover:text-fg',
+                          isActive
+                            ? 'bg-overlay/[0.07] text-fg'
+                            : 'text-fg-muted hover:bg-overlay/[0.04] hover:text-fg',
                         )
                       }
                     >
@@ -209,7 +211,7 @@ function TokenMeter() {
   return (
     <Link
       to={ROUTES.plans}
-      className="block rounded-xl border border-line bg-white/[0.02] p-3 transition-colors hover:border-line-strong"
+      className="block rounded-xl border border-line bg-overlay/[0.02] p-3 transition-colors hover:border-line-strong"
     >
       <div className="flex items-center justify-between text-[12px]">
         <span className="flex items-center gap-1.5 text-fg-muted">
@@ -266,7 +268,7 @@ function UserMenu() {
         <button
           type="button"
           {...props}
-          className="flex w-full items-center gap-2.5 rounded-xl p-1.5 text-left transition-colors hover:bg-white/[0.04]"
+          className="flex w-full items-center gap-2.5 rounded-xl p-1.5 text-left transition-colors hover:bg-overlay/[0.04]"
         >
           <span className="relative shrink-0">
             <ProfileAvatar id={user.avatar} initials={initials(user.name)} size={34} />

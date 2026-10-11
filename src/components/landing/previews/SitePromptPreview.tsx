@@ -13,7 +13,7 @@ export function SitePromptPreview() {
     <div className="flex flex-col gap-2">
       <div className="grid grid-cols-2 gap-1.5">
         {FIELDS.map((f) => (
-          <div key={f.label} className="rounded-md border border-line bg-white/[0.02] px-2.5 py-1.5">
+          <div key={f.label} className="rounded-md border border-line bg-overlay/[0.02] px-2.5 py-1.5">
             <div className="text-[9px] text-fg-subtle">{f.label}</div>
             <div className="truncate text-[11px] text-fg">{f.value}</div>
           </div>

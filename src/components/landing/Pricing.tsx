@@ -57,7 +57,7 @@ function PlanCard({ plan }: { plan: Plan }) {
       className={cn(
         'relative h-full rounded-2xl p-px transition-transform duration-300 hover:-translate-y-1',
         plan.recommended
-          ? 'bg-gradient-to-b from-electric-400/80 via-electric-500/25 to-white/[0.06] shadow-[0_24px_64px_-24px_rgb(47_107_255/0.55)]'
+          ? 'bg-gradient-to-b from-electric-400/80 via-electric-500/25 to-overlay/[0.06] shadow-[0_24px_64px_-24px_rgb(47_107_255/0.55)]'
           : 'bg-line',
       )}
     >

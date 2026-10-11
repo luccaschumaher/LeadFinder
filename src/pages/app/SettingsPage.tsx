@@ -23,6 +23,7 @@ import { Field, Input, PasswordInput, Switch } from '@/components/ui/Field'
 import { DEFAULT_AVATAR, DEFAULT_MASCOT } from '@/data/characters'
 import { SECTION_IDS } from '@/config/navigation'
 import { LEGAL } from '@/config/legal'
+import { applyTheme } from '@/lib/theme'
 import { ROUTES } from '@/config/routes'
 import { useCaptcha } from '@/hooks/useCaptcha'
 import { CAPTCHA_REQUIRED_MESSAGE } from '@/lib/captcha'
@@ -64,7 +65,7 @@ export function SettingsPage() {
                   aria-current={tab === t.id ? 'page' : undefined}
                   className={cn(
                     'flex h-9 w-full items-center gap-2.5 rounded-lg px-3 text-[13px] whitespace-nowrap transition-colors',
-                    tab === t.id ? 'bg-white/[0.07] text-fg' : 'text-fg-muted hover:bg-white/[0.04] hover:text-fg',
+                    tab === t.id ? 'bg-overlay/[0.07] text-fg' : 'text-fg-muted hover:bg-overlay/[0.04] hover:text-fg',
                   )}
                 >
                   <t.icon
@@ -270,15 +271,39 @@ function AppearanceSection() {
         </div>
         <div>
           <p className="text-sm font-medium text-fg">Tema</p>
-          <div className="mt-3 grid max-w-md grid-cols-2 gap-2">
-            <div className="rounded-xl border border-electric-400/60 bg-ink-950 p-3">
-              <div className="h-14 rounded-lg border border-line bg-ink-900" />
-              <p className="mt-2 text-[13px] text-fg">Escuro</p>
-            </div>
-            <div className="rounded-xl border border-line p-3 opacity-50" aria-disabled="true">
-              <div className="h-14 rounded-lg bg-white/80" />
-              <p className="mt-2 text-[13px] text-fg-muted">Claro · em breve</p>
-            </div>
+          <div role="radiogroup" aria-label="Tema" className="mt-3 grid max-w-md grid-cols-2 gap-2">
+            {(
+              [
+                { id: 'dark', label: 'Escuro', preview: 'bg-[#090b11] border-[#1d2330]', bar: 'bg-[#1d2330]' },
+                { id: 'light', label: 'Claro', preview: 'bg-white border-[#dce1ea]', bar: 'bg-[#dce1ea]' },
+              ] as const
+            ).map((t) => {
+              const active = (user.preferences.theme ?? 'dark') === t.id
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => {
+                    if (active) return
+                    applyTheme(t.id)
+                    authService.updatePreferences({ theme: t.id })
+                    toast.success(t.id === 'light' ? 'Tema claro ativado' : 'Tema escuro ativado')
+                  }}
+                  className={cn(
+                    'rounded-xl border p-3 text-left transition-colors',
+                    active ? 'border-electric-400/70 bg-electric-500/[0.06]' : 'border-line hover:border-line-strong',
+                  )}
+                >
+                  <div className={cn('h-14 rounded-lg border p-2', t.preview)}>
+                    <div className={cn('h-1.5 w-10 rounded-full', t.bar)} />
+                    <div className="mt-1.5 h-1.5 w-16 rounded-full bg-[#2f6bff]/70" />
+                  </div>
+                  <p className={cn('mt-2 text-[13px]', active ? 'text-fg' : 'text-fg-muted')}>{t.label}</p>
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>
