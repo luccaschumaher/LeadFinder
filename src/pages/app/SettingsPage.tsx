@@ -17,7 +17,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import { PageHeader } from '@/components/app/PageHeader'
 import { AvatarPicker, MascotPicker } from '@/components/mascots/pickers'
 import { Button, ButtonLink } from '@/components/ui/Button'
-import { ConfirmDialog } from '@/components/ui/Dialog'
+import { ConfirmDialog, Dialog } from '@/components/ui/Dialog'
 import { Card } from '@/components/ui/display'
 import { Field, Input, PasswordInput, Switch } from '@/components/ui/Field'
 import { DEFAULT_AVATAR, DEFAULT_MASCOT } from '@/data/characters'
@@ -32,7 +32,7 @@ import { cn } from '@/lib/cn'
 import { errorMessage } from '@/lib/errors'
 import { toast } from '@/lib/toast'
 import { downloadFile, formatDate } from '@/lib/utils'
-import { validateConfirm, validateName, validatePassword } from '@/lib/validation'
+import { validateConfirm, validateEmail, validateName, validatePassword } from '@/lib/validation'
 import { authService } from '@/services/auth'
 import { dataStore } from '@/stores/data'
 import { useCurrentUser } from '@/stores/session'
@@ -184,6 +184,7 @@ function SecuritySection() {
   const [form, setForm] = useState({ current: '', next: '', confirm: '' })
   const [errors, setErrors] = useState<Partial<typeof form>>({})
   const [saving, setSaving] = useState(false)
+  const [forgotOpen, setForgotOpen] = useState(false)
   const captcha = useCaptcha()
 
   const save = async (e: FormEvent) => {
@@ -228,25 +229,113 @@ function SecuritySection() {
   )
 
   return (
-    <form onSubmit={save}>
-      <Section
-        title="Alterar senha"
-        description="Use uma senha forte e exclusiva."
-        footer={
-          <Button type="submit" size="sm" loading={saving}>
-            Alterar senha
+    <>
+      <form onSubmit={save}>
+        <Section
+          title="Alterar senha"
+          description="Use uma senha forte e exclusiva."
+          footer={
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setForgotOpen(true)}>
+                Não lembro minha senha
+              </Button>
+              <Button type="submit" size="sm" loading={saving}>
+                Alterar senha
+              </Button>
+            </div>
+          }
+        >
+          <div className="grid max-w-md gap-4">
+            {field('current', 'Senha atual', 'current-password')}
+            {field('next', 'Nova senha', 'new-password')}
+            {field('confirm', 'Confirmar nova senha', 'new-password')}
+            <p className="text-[12px] text-fg-subtle">Mínimo de 8 caracteres, com letras e números.</p>
+            {captcha.widget}
+          </div>
+        </Section>
+      </form>
+      {forgotOpen && <ForgotPasswordDialog onClose={() => setForgotOpen(false)} />}
+    </>
+  )
+}
+
+/** "Não lembro minha senha": envia o link de redefinição para o e-mail digitado. */
+function ForgotPasswordDialog({ onClose }: { onClose: () => void }) {
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState<string>()
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent'>('idle')
+  const captcha = useCaptcha()
+
+  const send = async (e: FormEvent) => {
+    e.preventDefault()
+    const err = validateEmail(email)
+    setError(err)
+    if (err) return
+    if (!captcha.ready) return setError(CAPTCHA_REQUIRED_MESSAGE)
+    setStatus('sending')
+    try {
+      await authService.requestPasswordReset(email, captcha.token)
+      setStatus('sent')
+    } catch (err) {
+      setError(errorMessage(err))
+      setStatus('idle')
+      captcha.reset()
+    }
+  }
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      locked={status === 'sending'}
+      size="sm"
+      title={status === 'sent' ? 'Verifique seu e-mail' : 'Não lembro minha senha'}
+      description={
+        status === 'sent'
+          ? `Se houver uma conta com ${email.trim()}, enviamos um link para criar uma nova senha. Confira também a caixa de spam.`
+          : 'Digite o e-mail da sua conta. Vamos enviar um link para você criar uma nova senha.'
+      }
+      footer={
+        status === 'sent' ? (
+          <Button size="sm" onClick={onClose} data-autofocus>
+            Entendi
           </Button>
-        }
-      >
-        <div className="grid max-w-md gap-4">
-          {field('current', 'Senha atual', 'current-password')}
-          {field('next', 'Nova senha', 'new-password')}
-          {field('confirm', 'Confirmar nova senha', 'new-password')}
-          <p className="text-[12px] text-fg-subtle">Mínimo de 8 caracteres, com letras e números.</p>
+        ) : (
+          <>
+            <Button variant="secondary" size="sm" onClick={onClose} disabled={status === 'sending'}>
+              Cancelar
+            </Button>
+            <Button size="sm" type="submit" form="forgot-password-form" loading={status === 'sending'}>
+              Enviar link
+            </Button>
+          </>
+        )
+      }
+    >
+      {status !== 'sent' && (
+        <form id="forgot-password-form" onSubmit={send} noValidate className="space-y-4">
+          <Field label="E-mail" error={error}>
+            {({ id, describedBy }) => (
+              <Input
+                id={id}
+                aria-describedby={describedBy}
+                type="email"
+                autoComplete="email"
+                placeholder="voce@exemplo.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setError(undefined)
+                }}
+                error={error}
+                data-autofocus
+              />
+            )}
+          </Field>
           {captcha.widget}
-        </div>
-      </Section>
-    </form>
+        </form>
+      )}
+    </Dialog>
   )
 }
 
