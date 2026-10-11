@@ -25,6 +25,11 @@ const VERTEX_SERVICE_ACCOUNT = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT')
 const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+// Modelo do Gemini e reserva opcional (Secrets GEMINI_MODEL e GEMINI_FALLBACK_MODEL).
+const GEMINI_MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.8-flash'
+const GEMINI_FALLBACK_MODEL = Deno.env.get('GEMINI_FALLBACK_MODEL')
+const GEMINI_TIMEOUT_MS = 45_000
+let thinkingSupported = true
 
 // Claude Haiku 4.5: na Anthropic o id é "claude-haiku-4-5"; no Vertex AI, "claude-haiku-4-5@20251001".
 const ANTHROPIC_MODEL = 'claude-haiku-4-5'
@@ -320,34 +325,54 @@ async function callGemini(
   // A chave vai no cabeçalho (não na URL, que pode aparecer em logs).
   // Raciocínio "low": o modelo pensa pouco antes de responder — respostas bem mais rápidas,
   // e para chat de vendas e geração de prompt a qualidade é a mesma.
-  const request = (lowThinking: boolean) =>
-    fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY! },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents,
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: maxTokens,
-          ...(lowThinking ? { thinkingConfig: { thinkingLevel: 'low' } } : {}),
-        },
-      }),
-    })
-  let res = await request(true)
-  let errorText = ''
-  if (res.status === 400) {
-    errorText = await res.text()
-    // Se o modelo não aceitar o ajuste de raciocínio, tenta de novo sem ele.
-    if (/thinking/i.test(errorText)) {
-      res = await request(false)
-      errorText = ''
+  const request = async (model: string) => {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS)
+    try {
+      return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY! },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: maxTokens,
+            ...(thinkingSupported ? { thinkingConfig: { thinkingLevel: 'low' } } : {}),
+          },
+        }),
+      })
+    } catch {
+      // Tempo esgotado ou falha de rede: trata como indisponibilidade temporária.
+      return new Response('timeout', { status: 504 })
+    } finally {
+      clearTimeout(timer)
     }
   }
-  if (!res.ok) {
-    console.error('Gemini API Error:', res.status, errorText || (await res.text()))
+
+  // Tentativas: modelo principal (até 3 vezes, esperando um pouco entre elas quando o Google
+  // está sobrecarregado) e, se configurado, o modelo reserva.
+  const plan = [GEMINI_MODEL, GEMINI_MODEL, GEMINI_MODEL, ...(GEMINI_FALLBACK_MODEL ? [GEMINI_FALLBACK_MODEL] : [])]
+  let res: Response | null = null
+  let errorText = ''
+  for (let attempt = 0; attempt < plan.length; attempt++) {
+    res = await request(plan[attempt])
+    if (res.ok) break
+    errorText = await res.text()
+    // Modelo que não aceita o ajuste de raciocínio: desliga o ajuste e repete na hora.
+    if (res.status === 400 && /thinking/i.test(errorText) && thinkingSupported) {
+      thinkingSupported = false
+      attempt--
+      continue
+    }
+    console.error('Gemini API Error:', plan[attempt], res.status, errorText.slice(0, 500))
+    if (![429, 500, 502, 503, 504].includes(res.status)) break
+    if (attempt < plan.length - 1) await new Promise((r) => setTimeout(r, 700 * (attempt + 1)))
+  }
+  if (!res || !res.ok) {
     // Repassa o status HTTP para o tratamento de erros (429 = cota/limite, 401/403 = chave inválida)
-    throw Object.assign(new Error('ai_unavailable'), { status: res.status })
+    throw Object.assign(new Error('ai_unavailable'), { status: res?.status })
   }
   const data = await res.json()
   const candidate = data.candidates?.[0]
@@ -372,6 +397,17 @@ interface AIResult {
   provider: 'gemini' | 'anthropic'
   inputTokens: number
   outputTokens: number
+}
+
+/** Devolve ao limite do dia uma geração/mensagem que falhou (o usuário não perde a cota). */
+async function refundUsage(userId: string, kind: 'site_generations' | 'wave_messages') {
+  try {
+    const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } })
+    const { error } = await admin.rpc('lf_refund_usage', { p_user: userId, p_kind: kind })
+    if (error) console.error('lf_refund_usage', error.message)
+  } catch (e) {
+    console.error('lf_refund_usage', e)
+  }
 }
 
 /** Anota a chamada em lf_api_usage (painel administrativo). Falha aqui nunca derruba a resposta. */
@@ -473,17 +509,21 @@ Deno.serve(async (req) => {
               content: `<briefing>\n${briefToText(brief)}\n</briefing>\n\nGere agora somente o prompt do site.`,
             },
           ],
-          4000,
+          8192,
           { userId: user.id, action: 'site_prompt' },
         )
       } catch (e) {
+        await refundUsage(user.id, 'site_generations')
         if (e instanceof Error && e.message === 'refused') {
           return fail(422, 'refused', 'Não foi possível gerar um prompt com essas informações.')
         }
         throw e
       }
 
-      if (!output) return fail(502, 'empty', 'A IA não retornou conteúdo. Tente novamente.')
+      if (!output) {
+        await refundUsage(user.id, 'site_generations')
+        return fail(502, 'empty', 'A IA não retornou conteúdo. Tente novamente.')
+      }
 
       const { data: row, error } = await db
         .from('lf_site_generations')
@@ -533,10 +573,11 @@ Deno.serve(async (req) => {
         reply = await generateAIResponse(
           leadIASystem(String(body.mascot ?? ''), String(profile?.name ?? '').trim(), today),
           history.map((m) => ({ role: m.role as 'user' | 'assistant', content: clip(m.content, 4000) })),
-          2000,
+          4096,
           { userId: user.id, action: 'wave_chat' },
         )
       } catch (e) {
+        await refundUsage(user.id, 'wave_messages')
         if (e instanceof Error && e.message === 'refused') {
           return fail(
             422,
@@ -547,7 +588,10 @@ Deno.serve(async (req) => {
         throw e
       }
 
-      if (!reply) return fail(502, 'empty', 'A LeadIA não conseguiu responder agora. Tente novamente.')
+      if (!reply) {
+        await refundUsage(user.id, 'wave_messages')
+        return fail(502, 'empty', 'A LeadIA não conseguiu responder agora. Tente novamente.')
+      }
 
       const { data: saved, error } = await db
         .from('lf_messages')
