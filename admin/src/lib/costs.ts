@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { supabase } from './supabase'
 
 /**
  * Preços usados para ESTIMAR os gastos. Ficam salvos só neste navegador e podem ser
@@ -51,15 +52,36 @@ function load(): CostSettings {
   }
 }
 
+/**
+ * Preços das estimativas. Ficam no banco (compartilhados entre administradores e usados
+ * no relatório mensal) e, como reserva, neste navegador.
+ */
 export function useCostSettings() {
   const [settings, setSettings] = useState<CostSettings>(load)
+  const loaded = useRef(false)
+
+  // Carrega os valores salvos no banco uma vez.
+  useEffect(() => {
+    supabase.rpc('lf_admin_get_costs').then(({ data }) => {
+      if (data && typeof data === 'object') setSettings((s) => ({ ...s, ...(data as Partial<CostSettings>) }))
+      loaded.current = true
+    })
+  }, [])
+
+  // Salva a cada mudança (no navegador na hora; no banco depois de uma pausa na digitação).
   useEffect(() => {
     try {
       localStorage.setItem(KEY, JSON.stringify(settings))
     } catch {
       /* armazenamento indisponível: segue com os valores em memória */
     }
+    if (!loaded.current) return
+    const timer = setTimeout(() => {
+      void supabase.rpc('lf_admin_set_costs', { p_costs: settings })
+    }, 800)
+    return () => clearTimeout(timer)
   }, [settings])
+
   return [settings, setSettings] as const
 }
 

@@ -144,5 +144,19 @@ Deno.serve(async (req) => {
     p_user: callback,
   })
   if (error) return keepForLater(error.message)
+
+  // Valor pago e taxa da Cakto, para o relatório mensal (falha aqui não afeta o plano).
+  const amount = Number(data.amount ?? data.baseAmount)
+  const fees = Number(data.fees)
+  if (Number.isFinite(amount) || Number.isFinite(fees)) {
+    const { error: amountError } = await admin
+      .from('lf_billing_events')
+      .update({
+        amount: Number.isFinite(amount) ? amount : null,
+        fees: Number.isFinite(fees) ? fees : null,
+      })
+      .eq('id', eventId)
+    if (amountError) console.error('lf_billing_events amount', amountError.message)
+  }
   return json(200, { ok: true, ...result })
 })

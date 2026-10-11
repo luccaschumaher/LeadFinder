@@ -1,6 +1,7 @@
 import { TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { BarChart } from '../components/BarChart'
+import { ReportButton } from '../components/ReportButton'
 import { ServiceCostChart } from '../components/ServiceCostChart'
 import { Card, CardTitle, Segmented, Stat } from '../components/ui'
 import type { Summary } from '../lib/api'
@@ -92,6 +93,7 @@ export function Overview({ summary, costs }: { summary: Summary; costs: CostSett
         <CardTitle
           title={`Custo por serviço (${summary.days} dias)`}
           hint="Quem está gastando mais. Busca e IA são calculadas pelo uso; os demais são custos fixos da aba APIs e custos."
+          action={<ReportButton />}
         />
         <div className="p-5">
           <ServiceCostChart items={services} />
