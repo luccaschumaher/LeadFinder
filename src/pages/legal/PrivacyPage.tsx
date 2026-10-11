@@ -72,7 +72,10 @@ export function PrivacyPage() {
             e a região pesquisados);
           </li>
           <li>
-            <strong>Cakto</strong> — processamento dos pagamentos.
+            <strong>Cakto</strong> — processamento dos pagamentos;
+          </li>
+          <li>
+            <strong>Resend</strong> — envio dos e-mails da conta (confirmação de cadastro, nova senha e resumo semanal).
           </li>
         </ul>
         <p>
