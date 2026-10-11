@@ -1,0 +1,6 @@
+// Painel administrativo do LeadFinder (Cloudflare Workers, só arquivos estáticos).
+{
+  "name": "leadfinder-admin",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./dist", "not_found_handling": "single-page-application" }
+}

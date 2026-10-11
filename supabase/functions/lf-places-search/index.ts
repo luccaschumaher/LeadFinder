@@ -267,6 +267,11 @@ Deno.serve(async (req) => {
             ? 'search_limit'
             : 'register_failed',
       )
+    // Anota a consulta paga para o painel administrativo (uma falha aqui não bloqueia a busca).
+    const { error: logError } = await admin
+      .from('lf_api_usage')
+      .insert({ user_id: user!.id, provider: SERPER_KEY ? 'serper' : 'google_places', action: 'search' })
+    if (logError) console.error('lf_api_usage', logError.message)
   }
 
   try {

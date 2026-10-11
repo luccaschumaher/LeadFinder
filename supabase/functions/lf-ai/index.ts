@@ -24,6 +24,7 @@ const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const VERTEX_SERVICE_ACCOUNT = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT')
 const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 // Claude Haiku 4.5: na Anthropic o id é "claude-haiku-4-5"; no Vertex AI, "claude-haiku-4-5@20251001".
 const ANTHROPIC_MODEL = 'claude-haiku-4-5'
@@ -310,7 +311,7 @@ async function callGemini(
   systemPrompt: string,
   messages: { role: 'user' | 'assistant'; content: string }[],
   maxTokens: number = 3000,
-): Promise<string> {
+): Promise<AIResult> {
   const contents = messages.map((m) => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }],
@@ -351,20 +352,61 @@ async function callGemini(
   const data = await res.json()
   const candidate = data.candidates?.[0]
   if (candidate?.finishReason === 'SAFETY') throw new Error('refused')
-  return (
-    candidate?.content?.parts
-      ?.filter((p: { thought?: boolean }) => !p.thought)
-      .map((p: { text?: string }) => p.text ?? '')
-      .join('\n')
-      .trim() ?? ''
-  )
+  const meta = data.usageMetadata ?? {}
+  return {
+    text:
+      candidate?.content?.parts
+        ?.filter((p: { thought?: boolean }) => !p.thought)
+        .map((p: { text?: string }) => p.text ?? '')
+        .join('\n')
+        .trim() ?? '',
+    provider: 'gemini',
+    inputTokens: Number(meta.promptTokenCount ?? 0),
+    // Tokens de raciocínio são cobrados como saída.
+    outputTokens: Number(meta.candidatesTokenCount ?? 0) + Number(meta.thoughtsTokenCount ?? 0),
+  }
+}
+
+interface AIResult {
+  text: string
+  provider: 'gemini' | 'anthropic'
+  inputTokens: number
+  outputTokens: number
+}
+
+/** Anota a chamada em lf_api_usage (painel administrativo). Falha aqui nunca derruba a resposta. */
+async function logUsage(userId: string, action: string, r: AIResult) {
+  try {
+    const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } })
+    const { error } = await admin.from('lf_api_usage').insert({
+      user_id: userId,
+      provider: r.provider,
+      action,
+      input_tokens: r.inputTokens,
+      output_tokens: r.outputTokens,
+    })
+    if (error) console.error('lf_api_usage', error.message)
+  } catch (e) {
+    console.error('lf_api_usage', e)
+  }
 }
 
 async function generateAIResponse(
   systemPrompt: string,
   messages: { role: 'user' | 'assistant'; content: string }[],
   maxTokens: number,
+  usage: { userId: string; action: string },
 ): Promise<string> {
+  const result = await callAI(systemPrompt, messages, maxTokens)
+  await logUsage(usage.userId, usage.action, result)
+  return result.text
+}
+
+async function callAI(
+  systemPrompt: string,
+  messages: { role: 'user' | 'assistant'; content: string }[],
+  maxTokens: number,
+): Promise<AIResult> {
   if (GEMINI_KEY) {
     return await callGemini(systemPrompt, messages, maxTokens)
   }
@@ -376,7 +418,12 @@ async function generateAIResponse(
     messages: messages.map((m) => ({ role: m.role, content: m.content })),
   })
   if (message.stop_reason === 'refusal') throw new Error('refused')
-  return textOf(message)
+  return {
+    text: textOf(message),
+    provider: 'anthropic',
+    inputTokens: message.usage?.input_tokens ?? 0,
+    outputTokens: message.usage?.output_tokens ?? 0,
+  }
 }
 
 Deno.serve(async (req) => {
@@ -427,6 +474,7 @@ Deno.serve(async (req) => {
             },
           ],
           4000,
+          { userId: user.id, action: 'site_prompt' },
         )
       } catch (e) {
         if (e instanceof Error && e.message === 'refused') {
@@ -486,6 +534,7 @@ Deno.serve(async (req) => {
           leadIASystem(String(body.mascot ?? ''), String(profile?.name ?? '').trim(), today),
           history.map((m) => ({ role: m.role as 'user' | 'assistant', content: clip(m.content, 4000) })),
           2000,
+          { userId: user.id, action: 'wave_chat' },
         )
       } catch (e) {
         if (e instanceof Error && e.message === 'refused') {
