@@ -1,9 +1,10 @@
 import { TriangleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { BarChart } from '../components/BarChart'
+import { ServiceCostChart } from '../components/ServiceCostChart'
 import { Card, CardTitle, Segmented, Stat } from '../components/ui'
 import type { Summary } from '../lib/api'
-import { aiCostBrl, searchCostBrl, type CostSettings } from '../lib/costs'
+import { aiCostBrl, costByService, searchCostBrl, type CostSettings } from '../lib/costs'
 import { int, money, PLAN_LABEL, short } from '../lib/format'
 
 type Metric = 'search_requests' | 'ai_calls' | 'tokens' | 'active_users' | 'new_users' | 'cost'
@@ -27,9 +28,10 @@ export function Overview({ summary, costs }: { summary: Summary; costs: CostSett
     return t
   }, [daily])
 
-  const searchCost = searchCostBrl(totals.search, costs)
-  const aiCost = aiCostBrl(totals.input, totals.output, costs)
-  const cost = searchCost + aiCost
+  const services = costByService(totals, summary.days, costs)
+  const variable = searchCostBrl(totals.search, costs) + aiCostBrl(totals.input, totals.output, costs)
+  const cost = services.reduce((s, i) => s + i.value, 0)
+  const fixed = cost - variable
   // Receita do período: receita mensal proporcional aos dias escolhidos.
   const revenue = (summary.mrr * summary.days) / 30
   const margin = revenue - cost
@@ -76,7 +78,7 @@ export function Overview({ summary, costs }: { summary: Summary; costs: CostSett
         <Stat
           label={`Custo estimado (${summary.days} dias)`}
           value={money(cost)}
-          sub={`Busca ${money(searchCost)} · IA ${money(aiCost)}`}
+          sub={`Por uso ${money(variable)} · fixos ${money(fixed)}`}
         />
         <Stat
           label={`Resultado estimado (${summary.days} dias)`}
@@ -85,6 +87,16 @@ export function Overview({ summary, costs }: { summary: Summary; costs: CostSett
           tone={margin >= 0 ? 'good' : 'bad'}
         />
       </div>
+
+      <Card>
+        <CardTitle
+          title={`Custo por serviço (${summary.days} dias)`}
+          hint="Quem está gastando mais. Busca e IA são calculadas pelo uso; os demais são custos fixos da aba APIs e custos."
+        />
+        <div className="p-5">
+          <ServiceCostChart items={services} />
+        </div>
+      </Card>
 
       <Card>
         <CardTitle

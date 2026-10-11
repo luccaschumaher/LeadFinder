@@ -117,3 +117,16 @@ export async function fetchPayments() {
   if (error) fail(error.message)
   return data as { events: PaymentEvent[]; failures: PaymentFailure[] }
 }
+
+export interface EmailStats {
+  period: { signups: number; recoveries: number; weekly: number }
+  month_total: number
+  today_total: number
+}
+
+/** E-mails enviados (Resend). Retorna null se o SQL ainda não foi rodado. */
+export async function fetchEmailStats(days: number) {
+  const { data, error } = await supabase.rpc('lf_admin_email_stats', { p_days: days })
+  if (error) return null
+  return data as EmailStats
+}

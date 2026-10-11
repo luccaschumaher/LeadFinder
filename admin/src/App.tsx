@@ -4,10 +4,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { Button, Segmented } from './components/ui'
 import { cx } from './lib/cx'
 import {
+  fetchEmailStats,
   fetchPayments,
   fetchSummary,
   fetchUsers,
   isAdmin,
+  type EmailStats,
   type PaymentEvent,
   type PaymentFailure,
   type Summary,
@@ -35,6 +37,7 @@ interface Data {
   summary: Summary
   users: UserRow[]
   payments: { events: PaymentEvent[]; failures: PaymentFailure[] }
+  emails: EmailStats | null
 }
 
 export function App() {
@@ -89,10 +92,10 @@ function Dashboard({ email }: { email: string }) {
   // Recarrega ao trocar o período ou ao clicar em Atualizar.
   useEffect(() => {
     let cancelled = false
-    Promise.all([fetchSummary(days), fetchUsers(days), fetchPayments()])
-      .then(([summary, users, payments]) => {
+    Promise.all([fetchSummary(days), fetchUsers(days), fetchPayments(), fetchEmailStats(days)])
+      .then(([summary, users, payments, emails]) => {
         if (cancelled) return
-        setData({ summary, users, payments })
+        setData({ summary, users, payments, emails })
         setError(null)
       })
       .catch(
@@ -188,7 +191,7 @@ function Dashboard({ email }: { email: string }) {
         ) : tab === 'payments' ? (
           <Payments events={data.payments.events} failures={data.payments.failures} />
         ) : (
-          <Apis summary={data.summary} costs={costs} setCosts={setCosts} />
+          <Apis summary={data.summary} emails={data.emails} costs={costs} setCosts={setCosts} />
         )}
       </main>
     </div>
