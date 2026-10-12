@@ -95,7 +95,7 @@ export function Users({ users, costs, days }: { users: UserRow[]; costs: CostSet
               <Th>Último acesso</Th>
               <Th right>Dias ativos</Th>
               <Th right>Empresas</Th>
-              <Th right>Buscas</Th>
+              <Th right>Consultas</Th>
               <Th right>Prompts</Th>
               <Th right>Msgs LeadIA</Th>
               <Th right>Tokens IA</Th>
