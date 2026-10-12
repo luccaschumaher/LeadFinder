@@ -189,6 +189,7 @@ export function SearchPage() {
                   aria-describedby={describedBy}
                   icon={<Building2 />}
                   placeholder="Ex.: barbearias, clínicas, restaurantes"
+                  autoComplete="off"
                   value={segment}
                   onChange={(e) => {
                     setSegment(e.target.value)
@@ -205,6 +206,7 @@ export function SearchPage() {
                   aria-describedby={describedBy}
                   icon={<MapPin />}
                   placeholder="Ex.: Curitiba, PR"
+                  autoComplete="off"
                   value={region}
                   onChange={(e) => {
                     setRegion(e.target.value)

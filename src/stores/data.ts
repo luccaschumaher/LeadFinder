@@ -80,15 +80,19 @@ interface SavedSearch {
   companies: Company[]
 }
 
-/** Guarda a busca em andamento (e as empresas dela) para sobreviver a recarregamentos. */
+/**
+ * Guarda a busca em andamento (e as empresas dela) só enquanto a aba estiver aberta
+ * (sessionStorage): sobrevive a recarregar a página, mas some ao fechar a aba ou sair da conta.
+ */
 function persistSearch() {
   if (!activeUserId) return
   const { currentSearch, companies } = dataStore.get()
   const ids = currentSearch ? [...currentSearch.companyIds, ...(currentSearch.pendingIds ?? [])] : []
-  storage.set(searchKey(activeUserId), {
-    currentSearch,
-    companies: ids.map((id) => companies[id]).filter(Boolean),
-  } satisfies SavedSearch)
+  storage.set(
+    searchKey(activeUserId),
+    { currentSearch, companies: ids.map((id) => companies[id]).filter(Boolean) } satisfies SavedSearch,
+    'session',
+  )
 }
 
 /** Carrega do Supabase todos os dados do usuário. */
@@ -112,7 +116,9 @@ export async function loadUserData(userId: string) {
       supabase.rpc('lf_usage_today').single(),
     ])
 
-  const saved = storage.get<SavedSearch>(searchKey(userId), { currentSearch: null, companies: [] })
+  // Buscas antigas que ficavam salvas para sempre no navegador são apagadas.
+  storage.remove(searchKey(userId))
+  const saved = storage.get<SavedSearch>(searchKey(userId), { currentSearch: null, companies: [] }, 'session')
   const companyMap: Record<string, Company> = {}
   saved.companies.forEach((c) => (companyMap[c.id] = c))
   rows(companies).forEach((r) => (companyMap[r.id] = toCompany(r)))
@@ -159,6 +165,11 @@ export async function loadUserData(userId: string) {
 export function unloadUserData() {
   unsubscribe?.()
   unsubscribe = null
+  // Ao sair da conta, a última busca não fica no aparelho.
+  if (activeUserId) {
+    storage.remove(searchKey(activeUserId), 'session')
+    storage.remove(searchKey(activeUserId))
+  }
   activeUserId = null
   dataStore.replace(emptyData())
 }
